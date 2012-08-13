@@ -1,0 +1,13 @@
+{% if user.is_authenticated %}
+<a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-user"></span> {{ user.username }} <span class="caret"></span></a>
+<ul class="dropdown-menu">
+    {% if user.is_staff %}
+    <li><a href="{% url options %}">Options</a></li>
+    <li><a href="#">User Management</a></li>
+    <li class="divider"></li>
+    {% endif %}
+    <li><a href="{% url logout next_page='/' %}">Sign Out</a></li>
+</ul>
+{% else %}
+<a href="{% url login %}" class="btn">Log-in</a>
+{% endif %}

@@ -1,0 +1,8 @@
+{% load i18n %}
+<ul class="nav">
+    <li {% if category = 'home' %}class="active"{% endif %}><a href="{% url home %}">{% trans "Home" %}</a></li>
+    <li {% if category = 'idgen' %}class="active"{% endif %}><a href="{% url idgen None %}" title="Generated IDs">{% trans "IDs" %}</a></li>
+    <li {% if category = 'classes' %}class="active"{% endif %}><a href="{% url classes %}">{% trans "Classes" %}</a></li>
+    <li {% if category = 'submissions' %}class="active"{% endif %}><a href="{% url submissions %}">{% trans "Submissions" %}</a></li>
+    <li {% if category = 'help' %}class="active"{% endif %}><a href="{% url help %}">{% trans "help" %}</a></li>
+</ul>

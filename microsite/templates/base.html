@@ -1,0 +1,79 @@
+<!DOCTYPE html> 
+<html>
+	<head>
+		<meta charset="UTF-8" />
+        <title>{% block page_title %}{% endblock %}</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="author" content="{% block meta_author %}{% endblock %}" />
+		<meta name="copyright" content="{% block meta_copyright %}{% endblock %}" />
+		<meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}" />
+		<meta name="description" content="{% block meta_description %}{% endblock %}" />
+		<meta name="keywords" content="{% block meta_keywords %}{% endblock %}" />
+
+        <link rel="icon" type="image/png" href="{{ STATIC_URL }}favicon.png" />
+		<link rel="stylesheet" href="{{ STATIC_URL }}css/print.css" type="text/css" media="print" />
+		<link rel="stylesheet" href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" type="text/css" media="screen,projection" />
+        <link rel="stylesheet" href="{{ STATIC_URL }}css/microsite.css" type="text/css" media="screen,projection" />
+		<link rel="index" title="" href="" />
+
+		<!--[if lt IE 9 ]>
+			<script src="{{ STATIC_URL }}js/html5_ie.js"></script>
+		<![endif]--> 
+
+	</head>
+
+	<body class="{% block bodyclass %}{% endblock %}">
+        {% block body %}
+        <header>
+        {% block header %}
+        <div id="header" class="navbar navbar-fixed-top">
+          <div class="navbar-inner">
+            <div class="container-fluid">
+              <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </a>
+              <a class="brand" href="{% url home %}">{% include 'name.txt' %}</a>
+              <div class="btn-group pull-right">
+                {% include 'user_menu.html' %}
+              </div>
+              <div class="nav-collapse">
+                {% include 'menu.html' %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endblock %}
+        </header>
+
+		<div id="content-wrapper" class="container-fluid">
+			<section id="content">
+                {% block content %}Hello World{% endblock %}
+			</section>
+		</div>
+
+		<footer>
+            {% block footer %}{% endblock %}
+		</footer>
+
+    {% endblock %}
+
+    <script src="{{ STATIC_URL }}bootstrap/js/jquery-1.7.2.min.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-transition.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-alert.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-modal.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-dropdown.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-scrollspy.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tooltip.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-popover.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-button.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-collapse.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-carousel.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
+
+	</body>
+
+</html>

@@ -1,0 +1,4 @@
+Django==1.4.1
+requests
+twill
+elaphe

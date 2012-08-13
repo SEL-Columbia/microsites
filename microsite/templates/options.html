@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block page_title %}Options Management{% endblock %}
+
+{% block content %}
+<h1>Options</h1>
+<p>The following options are site-wide and impacts the behavior of the website.<br />
+    Be careful in modifying them because you can break the website but <strong>no harm can be made to the data</strong> itself.</p>
+
+<form action="{% url options %}" method="post" class="well">
+{% csrf_token %}
+<table class="table table-striped table-bordered table-condensed">
+<thead>
+    <tr><th>Name</th><th>Value</th></tr>
+</thead>
+<tbody>
+{% for form in forms %}
+<tr><td>{{ form.key.value }}<input type="hidden" name="{{ form.key.value }}-key" value="{{ form.key.value }}" /></td><td{% if form.errors.json_value %} class="alert alert-error"{% endif %}>{{ form.json_value }}
+{% if form.errors.json_value %}{% for error in form.errors.json_value %}{{ error }}<br />{% endfor %}</p>{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<input type="submit" value="Submit" class="btn btn-primary" />
+</form>
+
+{% endblock %}
