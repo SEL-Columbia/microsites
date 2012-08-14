@@ -10,13 +10,18 @@ from constants import FORMHUB_URL, DEFAULT_LOGIN, DEFAULT_PASSWORD, BAMBOO_URL
 from microsite.utils import download_formhub
 from microsite.models import Option
 from microsite.decorators import login_maybe_required
-from microsite.bamboo import count_submissions
+from microsite.bamboo import ErrorRetrievingBambooData, count_submissions
 
 
 def home(request):
     context = {'category': 'home'}
 
-    context.update({'nb_submissions': count_submissions(u'rating')})
+    try:
+        nb_submissions = count_submissions(u'rating')
+    except ErrorRetrievingBambooData:
+        nb_submissions = None
+
+    context.update({'nb_submissions': nb_submissions})
 
     return render(request, 'home.html', context)
 
