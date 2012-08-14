@@ -22,8 +22,8 @@ class Option(models.Model):
 
     def get_value(self):
         if self.json_value:
-            return load_json(self.json_value)
-        return {}
+            return load_json(self.json_value, None)
+        return ''
     
     def set_value(self, value):
         self.json_value = dump_json(value)

@@ -1,12 +1,42 @@
 
+from django import forms
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
+from django.shortcuts import redirect
 
+from microsite.utils import dump_json, load_json
+from microsite.models import Option
+from microsite.bamboo import getset_bamboo_dataset
 from microsite.decorators import login_maybe_required
 from microsite.barcode import b64_random_qrcode
 
 
 DEFAULT_IDS = 5
+
+
+class JSONTextInput(forms.TextInput):
+
+    def render(self, name, value, attrs=None):
+        try:
+            value = load_json(value)
+        except:
+            pass
+        return super(JSONTextInput, self).render(name, value, attrs)
+
+
+class OptionForm(forms.ModelForm):
+
+    error_css_class = 'alert alert-error'
+    required_css_class = 'alert alert-error'
+
+    class Meta:
+        model = Option
+        hidden = ('key')
+
+    json_value = forms.CharField(widget=JSONTextInput, required=False)
+
+    def clean_json_value(self):
+        return dump_json(self.cleaned_data.get('json_value'))
 
 
 @login_maybe_required
@@ -30,42 +60,29 @@ def idgen(request, nb_ids=DEFAULT_IDS):
     return render(request, 'idgen.html', context)
 
 
-from django import forms
-from microsite.models import Option
-
-class OptionForm(forms.ModelForm):
-
-    error_css_class = 'alert alert-error'
-    required_css_class = 'alert alert-error'
-
-    class Meta:
-        model = Option
-        hidden = ('key')
-
-    json_value = forms.CharField(widget=forms.TextInput, required=False)
-
-
 @permission_required('option.can_edit')
 def options(request):
 
     context = {'category': 'options'}
 
     if request.method == "POST":
-        forms = [OptionForm(request.POST, prefix=str(option), instance=option) for option in Option.objects.all()]
+        forms = [OptionForm(request.POST, prefix=str(option), instance=option) 
+                 for option in Option.objects.all()]
 
         if all([of.is_valid() for of in forms]):
-            print('VALID')
             for of in forms:
+                print(of.cleaned_data)
+                # of.json_value = dump_json(of.json_value)
                 of.save()
-            # return HttpResponseRedirect('/polls/add/')
-        else:
-            print('INVALID')
-            for of in forms:
-                print(of)
-                print(of.errors)
+
+            # try to update bamboo dataset
+            getset_bamboo_dataset()
+
+            redirect(options)
+
     else:
-        forms = [OptionForm(prefix=str(option), instance=option) for option in Option.objects.all()]
-    # return render_to_response('add_poll.html', )
+        forms = [OptionForm(prefix=str(option), instance=option) 
+                 for option in Option.objects.all()]
 
     context.update({'forms': forms})
 
