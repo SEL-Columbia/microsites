@@ -71,8 +71,6 @@ def options(request):
 
         if all([of.is_valid() for of in forms]):
             for of in forms:
-                print(of.cleaned_data)
-                # of.json_value = dump_json(of.json_value)
                 of.save()
 
             # try to update bamboo dataset
