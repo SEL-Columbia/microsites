@@ -9,25 +9,38 @@
 <p>Blabla about how to use the form in the field.</p>
 
 
-<table class="table table-striped">
-<thead><tr><th>Useful links</th></tr></thead>
+<table class="table table-bordered table-striped">
+<thead><tr><th colspan="2">Useful links</th></tr></thead>
 <tbody>
-<tr><td><a class="btn btn-primary" href="{{ form_url }}"><i class="icon-star icon-white"></i> Form on formhub</a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_dataentry_url }}"><i class="icon-pencil"></i> Form Data Entry Interface</a></td></tr>
-<tr><td></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_instance_url }}"><i class="icon-list-alt"></i> Form Data Viewer</a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_dataview_url }}"><i class="icon-list-alt"></i> Form Data (One by one)</a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_gdocs_url }}"><i class="icon-share"></i> Form data Google Docs</a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_map_url }}"><i class="icon-map-marker"></i> Form data a Map</a></td></tr>
-<tr><td></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_datacsv_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">CSV</span></a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_dataxls_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">XLS</span></a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_datakml_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">KML</span></a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_datazip_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">ZIP</span></a></td></tr>
-<tr><td></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_formxml_url }}"><i class="icon-file"></i> Form definition <span class="badge">XML</span></a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_formxls_url }}"><i class="icon-file"></i> Form definition <span class="badge">XLS</span></a></td></tr>
-<tr><td><a class="btn btn-small" href="{{ form_formjson_url }}"><i class="icon-file"></i> Form definition <span class="badge">JSON</span></a></td></tr>
+<tr>
+    <td><a class="btn btn-primary" href="{{ form_url }}"><i class="icon-star icon-white"></i> Form on formhub</a></td>
+    <td><a class="btn btn-small" href="{{ form_dataentry_url }}"><i class="icon-edit"></i> Form Data Entry Interface</a></td>
+</tr>
+<tr>
+    <td><a class="btn btn-small" href="{{ form_instance_url }}"><i class="icon-th-list"></i> Form Data Viewer</a></td>
+    <td><a class="btn btn-small" href="{{ form_map_url }}"><i class="icon-map-marker"></i> Form data on a Map</a></td>
+</tr>
+<tr>
+    <td><a class="btn btn-small" href="{{ form_dataview_url }}"><i class="icon-list-alt"></i> Form Data (One by one)</a></td>
+    <td><a class="btn btn-small" href="{{ form_gdocs_url }}"><i class="icon-share"></i> Form data Google Docs</a></td>
+</tr>
+
+<tr>
+    <td><a class="btn btn-small" href="{{ form_datacsv_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">CSV</span></a></td>
+    <td><a class="btn btn-small" href="{{ form_formxml_url }}"><i class="icon-file"></i> Form definition <span class="badge">XML</span></a></td>
+</tr>
+<tr>
+    <td><a class="btn btn-small" href="{{ form_dataxls_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">XLS</span></a></td>
+    <td><a class="btn btn-small" href="{{ form_formxls_url }}"><i class="icon-file"></i> Form definition <span class="badge">XLS</span></a></td>
+</tr>
+<tr>
+    <td><a class="btn btn-small" href="{{ form_datakml_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">KML</span></a></td>
+    <td><a class="btn btn-small" href="{{ form_formjson_url }}"><i class="icon-file"></i> Form definition <span class="badge">JSON</span></a></td>
+</tr>
+<tr>
+    <td><a class="btn btn-small" href="{{ form_datazip_url }}"><i class="icon-download"></i> Form data formhub <span class="badge">ZIP</span></a></td>
+    <td></td>
+</tr>
 </tbody>
 </table>
 
