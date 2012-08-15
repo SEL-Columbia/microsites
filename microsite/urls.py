@@ -13,10 +13,12 @@ urlpatterns = patterns('',
     url(r'^', include('%(default)s.urls' % {'default': settings.DEFAULT_APP})),
 
         # django login
-    url(r'^login/$', 'django.contrib.auth.views.login',
-        {'template_name': 'login.html'}, name='login'),
+    # url(r'^login/$', 'django.contrib.auth.views.login',
+    #     {'template_name': 'login.html'}, name='login'),
     url(r'^logout/$', 'django.contrib.auth.views.logout',
         {'template_name': 'logout.html', 'next_page': '/'}, name='logout'),
+
+    url(r'^login/$', 'microsite.views.login_greeter', name='login'),
 
     # default home
     url(r'^$', direct_to_template, {'template': 'home.html', 

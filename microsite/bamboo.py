@@ -11,7 +11,7 @@ class ErrorRetrievingBambooData(IOError):
     pass
 
 
-def getset_bamboo_dataset():
+def getset_bamboo_dataset(project):
     ''' Retrieve bamboo dataset ID on formhub and update model '''
 
     data = {'formhub_url': Option.objects.get(key='formhub_uri').value,
@@ -38,14 +38,16 @@ def getset_bamboo_dataset():
     return True
 
 
-def count_submissions(field, method='count'):
+def count_submissions(project, field, method='count'):
     ''' Number of submissions for a given field.
 
     method is one of: '25%', '50%', '75%', 'count' (default),
                       'max', 'mean', 'min', 'std' '''
 
-    data = {'bamboo_url': Option.objects.get(key='bamboo_uri').value,
-            'dataset': Option.objects.get(key='bamboo_dataset').value,}
+    data = {'bamboo_url': Option.objects.get(key='bamboo_uri',
+                                             project=project).value,
+            'dataset': Option.objects.get(key='bamboo_dataset',
+                                          project=project).value,}
 
     if not all(data):
         return False

@@ -1,9 +1,14 @@
+{% load microsite %}
 {% if user.is_authenticated %}
-<a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-user"></span> {{ user.username }} <span class="caret"></span></a>
+<a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-user"></span> {{ user.name }} ({{ user.project|NAdefault }}) <span class="caret"></span></a>
 <ul class="dropdown-menu">
     {% if user.is_staff %}
     <li><a href="{% url options %}">Options</a></li>
-    <li><a href="#">User Management</a></li>
+    <li><a href="/admin/auth/user/">Users</a></li>
+    <li class="divider"></li>
+    {% endif %}
+    {% if user.is_superuser %}
+    <li><a href="/admin/microsite/project/">Projects</a></li>
     <li class="divider"></li>
     {% endif %}
     <li><a href="{% url logout next_page='/' %}">Sign Out</a></li>

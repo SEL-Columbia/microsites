@@ -7,8 +7,8 @@ from django.shortcuts import redirect
 from microsite.utils import dump_json, load_json
 from microsite.models import Option
 from microsite.bamboo import getset_bamboo_dataset
-from microsite.decorators import login_maybe_required
 from microsite.barcode import b64_random_qrcode
+from microsite.decorators import project_required
 
 
 DEFAULT_IDS = 5
@@ -31,7 +31,8 @@ class OptionForm(forms.ModelForm):
 
     class Meta:
         model = Option
-        hidden = ('key')
+        hidden = ('key', 'name')
+        exclude = ('project',)
 
     json_value = forms.CharField(widget=JSONTextInput, required=False)
 
@@ -39,7 +40,7 @@ class OptionForm(forms.ModelForm):
         return dump_json(self.cleaned_data.get('json_value'))
 
 
-@login_maybe_required
+@project_required
 def idgen(request, nb_ids=DEFAULT_IDS):
 
     context = {'category': 'idgen'}
@@ -67,21 +68,35 @@ def options(request):
 
     if request.method == "POST":
         forms = [OptionForm(request.POST, prefix=str(option), instance=option) 
-                 for option in Option.objects.all()]
+                 for option
+                 in Option.objects.filter(project=request.user.project)]
 
         if all([of.is_valid() for of in forms]):
             for of in forms:
                 of.save()
 
             # try to update bamboo dataset
-            getset_bamboo_dataset()
+            getset_bamboo_dataset(request.user.project)
 
             redirect(options)
 
     else:
         forms = [OptionForm(prefix=str(option), instance=option) 
-                 for option in Option.objects.all()]
+                 for option 
+                 in Option.objects.filter(project=request.user.project)
+                                  .order_by('name')]
 
     context.update({'forms': forms})
 
     return render(request, 'options.html', context)
+
+
+def login_greeter(request):
+
+    from django.contrib.auth.views import login
+    from microsite.models import Project
+
+    context = {'category': 'login',
+               'projects': Project.objects.all().order_by('name')}
+
+    return login(request, template_name='login.html', extra_context=context)

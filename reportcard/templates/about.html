@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block page_title %}About the Literacy Report Card Project{% endblock %}
+
+{% block content %}
+<div class="well">
+<h1>About {% include 'name.txt' %}</h1>
+<p>...</p>
+<p>...</p>
+</div>
+
+{% if user.project.description %}
+<div class="well">
+<h1>About {{ user.project.name }}</h1>
+{{ user.project.description|linebreaks }}
+</div>
+{% endif %}
+
+{% endblock %}

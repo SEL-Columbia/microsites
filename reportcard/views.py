@@ -9,47 +9,70 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from constants import FORMHUB_URL, DEFAULT_LOGIN, DEFAULT_PASSWORD, BAMBOO_URL
 from microsite.utils import download_formhub
 from microsite.models import Option
-from microsite.decorators import login_maybe_required
+from microsite.decorators import project_required
 from microsite.bamboo import ErrorRetrievingBambooData, count_submissions
+from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
+                               get_formhub_form_public_api_url,
+                               get_formhub_form_datacsv_url,
+                               get_formhub_form_dataxls_url,
+                               get_formhub_form_datakml_url,
+                               get_formhub_form_datazip_url,
+                               get_formhub_form_gdocs_url,
+                               get_formhub_form_map_url,
+                               get_formhub_form_instance_url,
+                               get_formhub_form_dataentry_url,
+                               get_formhub_form_dataview_url,
+                               get_formhub_form_formxml_url,
+                               get_formhub_form_formxls_url,
+                               get_formhub_form_formjson_url)
 
 
+@project_required
 def home(request):
     context = {'category': 'home'}
 
+    # total number of submissions
     try:
-        nb_submissions = count_submissions(u'rating')
+        nb_submissions = count_submissions(request.user.project, u'rating')
     except ErrorRetrievingBambooData:
         nb_submissions = None
 
-    context.update({'nb_submissions': nb_submissions})
+    # total number of registered teachers
+    try:
+        nb_teachers = count_submissions(request.user.project, u'rating')
+    except ErrorRetrievingBambooData:
+        nb_teachers = None
+
+    context.update({'nb_submissions': nb_submissions,
+                    'nb_teachers': nb_teachers})
 
     return render(request, 'home.html', context)
 
 
-@login_maybe_required
-def list_classes(request):
+@project_required
+def list_reports(request):
 
-    context = {'category': 'classes'}
+    context = {'category': 'reports'}
 
-    classes_list = [{'name': u"Kabuyanda P.S",},
+    reports_list = [{'name': u"Kabuyanda P.S",},
                     {'name': u"Markala Zanbugu"},
                     {'name': u"Les mots"}]
-    paginator = Paginator(classes_list, 25)
+    paginator = Paginator(reports_list, 25)
 
     page = request.GET.get('page')
     try:
-        classes = paginator.page(page)
+        reports = paginator.page(page)
     except PageNotAnInteger:
-        classes = paginator.page(1)
+        reports = paginator.page(1)
     except EmptyPage:
-        classes = paginator.page(paginator.num_pages)
+        reports = paginator.page(paginator.num_pages)
 
-    context.update({'classes': classes})
+    context.update({'classes': reports})
 
     return render(request, 'list_classes.html', context)
 
 
-@login_maybe_required
+@project_required
 def list_submissions(request):
 
     context = {'category': 'submissions'}
@@ -70,6 +93,60 @@ def list_submissions(request):
     context.update({'submissions': submissions})
 
     return render(request, 'list_submissions.html', context)
+
+
+@project_required
+def list_teachers(request):
+
+    context = {'category': 'teachers'}
+
+    teachers_list = [{'name': u"Kabuyanda P.S",},
+                    {'name': u"Markala Zanbugu"},
+                    {'name': u"Les mots"}]
+    paginator = Paginator(teachers_list, 25)
+
+    page = request.GET.get('page')
+    try:
+        teachers = paginator.page(page)
+    except PageNotAnInteger:
+        teachers = paginator.page(1)
+    except EmptyPage:
+        teachers = paginator.page(paginator.num_pages)
+
+    context.update({'teachers': teachers})
+
+    return render(request, 'list_teachers.html', context)
+
+
+@project_required
+def form(request):
+
+    context = {'category': 'form'}
+
+    context.update({
+        'form_url': get_formhub_form_url(request.user.project),
+        'form_api_url': get_formhub_form_api_url(request.user.project),
+        'form_public_api_url': 
+                          get_formhub_form_public_api_url(request.user.project),
+        'form_datacsv_url': get_formhub_form_datacsv_url(request.user.project),
+        'form_dataxls_url': get_formhub_form_dataxls_url(request.user.project),
+        'form_datakml_url': get_formhub_form_datakml_url(request.user.project),
+        'form_datazip_url': get_formhub_form_datazip_url(request.user.project),
+        'form_gdocs_url': get_formhub_form_gdocs_url(request.user.project),
+        'form_map_url': get_formhub_form_map_url(request.user.project),
+        'form_instance_url': 
+                            get_formhub_form_instance_url(request.user.project),
+        'form_dataentry_url': 
+                           get_formhub_form_dataentry_url(request.user.project),
+        'form_dataview_url': 
+                            get_formhub_form_dataview_url(request.user.project),
+        'form_formxml_url': get_formhub_form_formxml_url(request.user.project),
+        'form_formxls_url': get_formhub_form_formxls_url(request.user.project),
+        'form_formjson_url': 
+                            get_formhub_form_formjson_url(request.user.project),
+        })
+
+    return render(request, 'form.html', context)
 
 
 def update_data(request):

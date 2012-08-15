@@ -14,7 +14,7 @@
 <p>During a period offive weeks from the end of May to the end of June 2012 the Education team of the Port-à-Piment Watershed Millennium Village in Haiti piloted a literacy assessment method.In total, 50 children were assessed, 40 of whom were enrolled in traditional schools (either public or private) and 10 of whom were enrolled in a new, special program attached to a public school that caters to children who have not previously attended school.</p>
 <p>The tests were created to follow the structure and objectives of literacy tests used by ASER, in India; they evaluate basic reading skills in a fast, easy-to-use way. These kinds of tests are also notable because they address four separate reading stages: letter recognition, word recognition, sentence comprehension, and story comprehension.</p>
 <p>The unique aspect of this project was its use of technology. The results of the assessment were recorded on an Open Data Kit (ODK) data collection platform on Android-powered mobile phones. Using this technology allowed the results to be processed much more quickly than by traditional methods.</p>
-  <p class="btn-group"><a href="{% url classes %}" class="btn btn-primary btn-large">Browse&nbsp;Classes</a> <a href="{% url submissions %}"class="btn btn-large">Browse Submissions</a></p>
+  <p class="btn-group"><a href="{% url reports %}" class="btn btn-primary btn-large">Browse&nbsp;Reports</a> <a href="{% url submissions %}"class="btn btn-large">Browse Submissions</a></p>
 </div>
 
     
@@ -33,6 +33,7 @@
         <li><a href="#"><strong class="male-color">♂</strong> F.O, Kabuyanda P.S, 3<sup>rd</sup> grade - July 27 17:32</a></li>
         <li><a href="#"><strong class="female-color">♀</strong> F.O, Kabuyanda P.S, 3<sup>rd</sup> grade - July 27 17:32</a></li>
         <li class="nav-header">TOTAL SUBMISSIONS: {{ nb_submissions|NAdefault }}</li>
+        <li class="nav-header">TOTAL TEACHERS: {{ nb_teachers|NAdefault }}</li>
         </ul>
     </div>
 </div>

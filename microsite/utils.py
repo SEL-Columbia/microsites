@@ -15,6 +15,12 @@ class DownloadFailed(StandardError):
     pass
 
 
+class ProjectUnconfigured(Exception):
+    def __init__(self, project=None):
+        Exception.__init__(self, u"Project “%s” is not configured." % project)
+        self.project = project
+
+
 def download_with_djangologin(url, login_url, login=None, 
                               password=None, ext=''):
     ''' Download a URI from a website using Django by loging-in first
@@ -76,3 +82,12 @@ def dump_json(obj, default=None):
 
 def load_json(json_str, object_hook=None):
     return json.loads(json_str, object_hook=object_hook)
+
+
+def get_option(project, option):
+    from microsite.models import Option
+    
+    try:
+        return Option.objects.get(project=project, key=option).value
+    except:
+        raise ProjectUnconfigured(project)

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block page_title %}ERROR: Project is not configured{% endblock %}
+
+{% block content %}
+<div class="alert alert-error alert-block">
+<h1 class="alert-heading">Error! Project is not configured</h1>
+<p class="alert-message">This page uses data from the {{ project }} project which is not properly configured.</p>
+</div>
+
+{% with admin=project.users.all.0 %}
+<p class="alert-message alert alert-warning">Please contact {% include '_contact_link.html' with contact=admin %} (admin of the project) to fix it.</p>
+{% endwith %}
+
+{% endblock %}

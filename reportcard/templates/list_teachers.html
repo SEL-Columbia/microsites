@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block page_title %}List of registered teachers{% endblock %}
+
+{% block content %}
+<h1>List of registered teachers, sorted by Name</h1>
+<table class="table table-striped table-bordered table-condensed">
+<thead>
+    <tr><th>Name</th></tr>
+</thead>
+<tbody>
+{% for teacher in teachers %}
+<tr><td>{{ teacher.name|upper }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div class="btn-group">
+    {% if teachers.has_previous %}
+        <a href="?page={{ teachers.previous_page_number }}" class="btn">previous</a>
+    {% endif %}
+    {% if teachers.has_next %}
+        <a href="?page={{ teachers.next_page_number }}" class="btn">next</a>
+    {% endif %}    
+    </div>
+    <p>Page {{ teachers.number }} of {{ teachers.paginator.num_pages }}.</p>
+</div>
+
+{% endblock %}
