@@ -16,15 +16,8 @@
 </tbody>
 </table>
 
-<div class="btn-group">
-    {% if teachers.has_previous %}
-        <a href="?page={{ teachers.previous_page_number }}" class="btn">previous</a>
-    {% endif %}
-    {% if teachers.has_next %}
-        <a href="?page={{ teachers.next_page_number }}" class="btn">next</a>
-    {% endif %}    
-    </div>
-    <p>Page {{ teachers.number }} of {{ teachers.paginator.num_pages }}.</p>
-</div>
+{% include 'pagination.html' with paginator=teachers %}
 
 {% endblock %}
+
+{% for page_num in teachers.paginator.page_range %}{% endfor %}

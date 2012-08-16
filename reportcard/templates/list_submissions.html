@@ -16,15 +16,6 @@
 </tbody>
 </table>
 
-<div class="btn-group">
-    {% if submissions.has_previous %}
-        <a href="?page={{ submissions.previous_page_number }}" class="btn">previous</a>
-    {% endif %}
-    {% if submissions.has_next %}
-        <a href="?page={{ submissions.next_page_number }}" class="btn">next</a>
-    {% endif %}    
-    </div>
-    <p>Page {{ submissions.number }} of {{ submissions.paginator.num_pages }}.</p>
-</div>
+{% include 'pagination.html' with paginator=submissions %}
 
 {% endblock %}

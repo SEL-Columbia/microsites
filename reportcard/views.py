@@ -4,10 +4,11 @@ import json
 import requests
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import EmptyPage, PageNotAnInteger
 
 from constants import FORMHUB_URL, DEFAULT_LOGIN, DEFAULT_PASSWORD, BAMBOO_URL
 from microsite.utils import download_formhub
+from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.models import Option
 from microsite.decorators import project_required
 from microsite.bamboo import ErrorRetrievingBambooData, count_submissions
@@ -60,7 +61,8 @@ def list_reports(request):
     reports_list = [{'name': u"Kabuyanda P.S",},
                     {'name': u"Markala Zanbugu"},
                     {'name': u"Les mots"}]
-    paginator = Paginator(reports_list, 25)
+
+    paginator = FlynsarmyPaginator(reports_list, 25, adjacent_pages=2)
 
     page = request.GET.get('page')
     try:
@@ -83,7 +85,8 @@ def list_submissions(request):
     submissions_list = [{'name': u"Kabuyanda P.S",},
                         {'name': u"Markala Zanbugu"},
                         {'name': u"Les mots"}]
-    paginator = Paginator(submissions_list, 25)
+
+    paginator = FlynsarmyPaginator(submissions_list, 25, adjacent_pages=2)
 
     page = request.GET.get('page')
     try:
@@ -106,7 +109,8 @@ def list_teachers(request):
     teachers_list = [{'name': u"Kabuyanda P.S",},
                     {'name': u"Markala Zanbugu"},
                     {'name': u"Les mots"}]
-    paginator = Paginator(teachers_list, 25)
+
+    paginator = FlynsarmyPaginator(teachers_list, 25, adjacent_pages=2)
 
     page = request.GET.get('page')
     try:
