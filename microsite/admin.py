@@ -3,10 +3,12 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 
-from models import Option, Project, MicrositeUser
+from models import Option, Project, MicrositeUser, KeyNamePair
 
 admin.site.register(Project)
 admin.site.register(Option)
+admin.site.register(KeyNamePair)
+
 
 class MicrositeUserStacked(admin.StackedInline):
     model = MicrositeUser
@@ -17,6 +19,5 @@ class MicrositeUserStacked(admin.StackedInline):
 class CustomUserAdmin(UserAdmin):
     inlines = [MicrositeUserStacked, ]
 
-# Adds a provider section to the django User Admin
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)

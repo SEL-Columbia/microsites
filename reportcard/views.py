@@ -63,7 +63,7 @@ def list_reports(request):
                     {'name': u"Markala Zanbugu"},
                     {'name': u"Les mots"}]
 
-    paginator = FlynsarmyPaginator(reports_list, 25, adjacent_pages=2)
+    paginator = FlynsarmyPaginator(reports_list, 10, adjacent_pages=2)
 
     page = request.GET.get('page')
     try:
@@ -87,7 +87,7 @@ def list_submissions(request):
                         {'name': u"Markala Zanbugu"},
                         {'name': u"Les mots"}]
 
-    paginator = FlynsarmyPaginator(submissions_list, 25, adjacent_pages=2)
+    paginator = FlynsarmyPaginator(submissions_list, 10, adjacent_pages=2)
 
     page = request.GET.get('page')
     try:
@@ -108,7 +108,7 @@ def list_teachers(request):
     context = {'category': 'teachers'}
 
     teachers_list = bamboo_query(request.user.project,
-                            is_registration=True)
+                                 is_registration=True)
 
     from pprint import pprint as pp
     pp(teachers_list)
@@ -120,7 +120,7 @@ def list_teachers(request):
             teacher['short_id_'] = teacher.get('written_id', None)
         teachers_list[index] = teacher
 
-    paginator = FlynsarmyPaginator(teachers_list, 25, adjacent_pages=2)
+    paginator = FlynsarmyPaginator(teachers_list, 10, adjacent_pages=2)
 
     page = request.GET.get('page')
     try:

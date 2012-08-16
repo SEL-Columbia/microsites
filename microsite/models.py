@@ -3,7 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ugettext
 
 from microsite.utils import dump_json, load_json
 
@@ -55,7 +55,7 @@ class Option(models.Model):
                                   verbose_name=_(u"Value"),
                                   help_text=_(u"JSON formated value."))
     name = models.CharField(max_length=70, blank=True,
-                            null=True, help_text=_(u"Name"))
+                            null=True, help_text=_(u"Option description"))
 
     project = models.ForeignKey(Project, blank=True,
                                 null=True, related_name='options')
@@ -72,6 +72,27 @@ class Option(models.Model):
         self.json_value = dump_json(value)
         
     value = property(get_value, set_value)
+
+
+class KeyNamePair(models.Model):
+
+    class Meta:
+        app_label = 'microsite'
+        verbose_name = _(u"Key-Name Pair")
+        verbose_name_plural = _(u"Key-Name Pairs")
+        unique_together = ('project', 'category', 'key')
+
+    project = models.ForeignKey(Project)
+    category = models.SlugField(max_length=75, verbose_name=_(u"Category"),
+                                help_text=_(u"Name of your set"))
+    key = models.SlugField(max_length=200, verbose_name=_(u"Key"),
+                           help_text=_(u"Identifier of the string"))
+    name = models.CharField(max_length=70, blank=True,
+                            null=True, help_text=_(u"Correct representation"))
+
+    def __unicode__(self):
+        return (ugettext(u"%(cat)s/%(key)s") 
+                         % {'key': self.key, 'cat': self.category})
 
 
 class MicrositeUser(models.Model):
