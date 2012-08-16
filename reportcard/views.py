@@ -11,7 +11,8 @@ from microsite.utils import download_formhub
 from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.models import Option
 from microsite.decorators import project_required
-from microsite.bamboo import ErrorRetrievingBambooData, count_submissions
+from microsite.barcode import short_id_from
+from microsite.bamboo import ErrorRetrievingBambooData, count_submissions, bamboo_query
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_public_api_url,
                                get_formhub_form_datacsv_url,
@@ -106,9 +107,18 @@ def list_teachers(request):
 
     context = {'category': 'teachers'}
 
-    teachers_list = [{'name': u"Kabuyanda P.S",},
-                    {'name': u"Markala Zanbugu"},
-                    {'name': u"Les mots"}]
+    teachers_list = bamboo_query(request.user.project,
+                            is_registration=True)
+
+    from pprint import pprint as pp
+    pp(teachers_list)
+
+    for index, teacher in enumerate(teachers_list):
+        if teacher.get('barcode', None):
+            teacher['short_id_'] = short_id_from(teacher.get('barcode'))
+        else:
+            teacher['short_id_'] = teacher.get('written_id', None)
+        teachers_list[index] = teacher
 
     paginator = FlynsarmyPaginator(teachers_list, 25, adjacent_pages=2)
 

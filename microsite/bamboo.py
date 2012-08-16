@@ -6,10 +6,14 @@ import requests
 
 from microsite.models import Option
 from microsite.formhub import get_formhub_form_public_api_url
-from microsite.utils import get_option
+from microsite.utils import get_option, load_json
 
 
 class ErrorRetrievingBambooData(IOError):
+    pass
+
+
+class ErrorParsingBambooData(ValueError):
     pass
 
 
@@ -112,3 +116,57 @@ def count_submissions(project, field, method='count', is_registration=False):
     except:
         raise ErrorRetrievingBambooData
     return 0
+
+
+def bamboo_query(project,
+                 select=None, query=None, group=None,
+                 as_summary=False,
+                 is_registration=False):
+
+    params = {
+        'select': select,
+        'query': query,
+        'group': group
+    }
+
+    # remove key with no value
+    for key, value in params.items():
+        if not value:
+            params.pop(key)
+
+    if as_summary:
+        url = get_bamboo_dataset_summary_url(project, is_registration)
+    else:
+        url = get_bamboo_dataset_url(project, is_registration)
+
+    req = requests.get(url, params=params)
+
+    if not req.status_code in (200, 202):
+        raise ErrorRetrievingBambooData(u"%d Status Code received."
+                                        % req.status_code)
+
+    try:
+        return load_json(req.text)
+    except Exception as e:
+        raise ErrorParsingBambooData(e.message)
+
+
+def bamboo_store_calculation(project, formula_name, formula,
+                             is_registration=False):
+
+    url = get_bamboo_dataset_calculations_url(project, is_registration)
+
+    params = {'name': formula_name,
+              'formula': formula}
+
+    req = requests.post(url, params=params)
+
+    if not req.status_code in (200, 201, 202):
+        raise ErrorRetrievingBambooData(u"%d Status Code received."
+                                        % req.status_code)
+
+    try:
+        return load_json(req.text)
+    except Exception as e:
+        raise ErrorParsingBambooData(e.message)
+
