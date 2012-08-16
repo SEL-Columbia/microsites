@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% load microsite %}
+{% load mstag %}
 
 {% block page_title %}List of registered teachers{% endblock %}
 
@@ -12,7 +12,7 @@
 </thead>
 <tbody>
 {% for teacher in teachers %}
-<tr><td>{{ teacher.tchr_name|upper }}</td><td>{{ teacher.school }}</td><td>{{ teacher.short_id_|NAdefault }}</td></tr>
+<tr><td>{{ teacher.tchr_name|upper }}</td><td>{{ teacher.school|KeyName:keycat }}</td><td>{{ teacher.short_id_|NAdefault }}</td></tr>
 {% endfor %}
 </tbody>
 </table>

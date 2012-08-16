@@ -1,4 +1,4 @@
-{% load microsite %}
+{% load mstag %}
 {% if user.is_authenticated %}
 <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-user"></span> {{ user.name }} ({{ user.project|NAdefault }}) <span class="caret"></span></a>
 <ul class="dropdown-menu">

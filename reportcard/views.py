@@ -105,7 +105,8 @@ def list_submissions(request):
 @project_required
 def list_teachers(request):
 
-    context = {'category': 'teachers'}
+    context = {'category': 'teachers',
+               'keycat': '%s|%s' % (request.user.project.slug, 'school_names')}
 
     teachers_list = bamboo_query(request.user.project,
                                  is_registration=True)

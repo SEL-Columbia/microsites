@@ -91,3 +91,12 @@ def get_option(project, option):
         return Option.objects.get(project=project, key=option).value
     except:
         raise ProjectUnconfigured(project)
+
+
+def get_name_for(project, category, key):
+    from microsite.models import KeyNamePair
+    try:
+        return KeyNamePair.objects.get(project=project, 
+                                       category=category, key=key).name
+    except KeyNamePair.DoesNotExist:
+        return key
