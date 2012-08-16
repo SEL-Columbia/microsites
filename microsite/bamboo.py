@@ -5,24 +5,20 @@ import json
 import requests
 
 from microsite.models import Option
+from microsite.formhub import get_formhub_form_public_api_url
+from microsite.utils import get_option
 
 
 class ErrorRetrievingBambooData(IOError):
     pass
 
 
-def getset_bamboo_dataset(project):
+def getset_bamboo_dataset(project, is_registration=False):
     ''' Retrieve bamboo dataset ID on formhub and update model '''
 
-    data = {'formhub_url': Option.objects.get(key='formhub_uri').value,
-            'user': Option.objects.get(key='formhub_user').value,
-            'formid': Option.objects.get(key='formhub_form').value}
+    url = get_formhub_form_public_api_url(project, is_registration)
 
-    # all those required to successfuly retrieve bamboo ID.
-    if not all(data):
-        return False
-
-    url = u'%(formhub_url)s/%(user)s/forms/%(formid)s/public_api' % data
+    key = 'bamboo_ids_dataset' if is_registration else 'bamboo_dataset'
 
     req = requests.get(url)
     if not req.status_code in (200, 202):
@@ -30,15 +26,61 @@ def getset_bamboo_dataset(project):
 
     try:
         response = json.loads(req.text)
-        bamboo_dataset = Option.objects.get(key='bamboo_dataset')
-        bamboo_dataset.value = response.get('bamboo_dataset')
+        bamboo_dataset = Option.objects.get(key=key, project=project)
+        bamboo_dataset.value = response.get(key)
         bamboo_dataset.save()
     except:
         return False
     return True
 
 
-def count_submissions(project, field, method='count'):
+def get_bamboo_datasets_url(project):
+
+    data = {'bamboo_url': get_bamboo_url(project)}
+    return u'%(bamboo_url)s/datasets' % data
+
+
+def get_bamboo_url(project):
+    return get_option(project, 'bamboo_uri')
+
+
+def get_bamboo_dataset(project):
+    return get_option(project, 'bamboo_dataset')
+
+
+def get_bamboo_ids_dataset(project):
+    return get_option(project, 'bamboo_ids_dataset')
+
+
+def get_bamboo_dataset_url(project, is_registration=False):
+
+    dataset = (get_bamboo_ids_dataset(project) if is_registration 
+                                         else get_bamboo_dataset(project))
+    data = {'bamboo_url': get_bamboo_url(project),
+            'dataset': dataset}
+    return u'%(bamboo_url)s/datasets/%(dataset)s' % data
+
+
+def get_bamboo_dataset_summary_url(project, is_registration=False):
+    data = {'dataset_url': get_bamboo_dataset_url(project, is_registration)}
+    return u'%(dataset_url)s/summary' % data
+
+
+def get_bamboo_dataset_info_url(project, is_registration=False):
+    data = {'dataset_url': get_bamboo_dataset_url(project, is_registration)}
+    return u'%(dataset_url)s/info' % data
+
+
+def get_bamboo_dataset_calculations_url(project, is_registration=False):
+    
+    dataset = (get_bamboo_ids_dataset(project) if is_registration 
+                                         else get_bamboo_dataset(project))
+    data = {'bamboo_url': get_bamboo_url(project),
+            'dataset': dataset}
+    return u'%(bamboo_url)s/calculations/%(dataset)s' % data
+
+
+def count_submissions(project, field, method='count', is_registration=False):
     ''' Number of submissions for a given field.
 
     method is one of: '25%', '50%', '75%', 'count' (default),
@@ -52,7 +94,7 @@ def count_submissions(project, field, method='count'):
     if not all(data):
         return False
 
-    url = u'%(bamboo_url)s/datasets/%(dataset)s/summary' % data
+    url = get_bamboo_dataset_summary_url(project, is_registration)
     
     req = requests.get(url)
     if not req.status_code in (200, 202):

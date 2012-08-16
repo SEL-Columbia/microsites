@@ -25,9 +25,11 @@ def get_formhub_ids_form(project):
 
 def get_formhub_form_url(project, is_registration=False):
   
+    form = (get_formhub_ids_form(project) if is_registration 
+                                         else get_formhub_form(project))
     data = {'base': get_formhub_url(project),
             'user': get_formhub_user(project),
-            'form': get_formhub_form(project)}
+            'form': form}
 
     return u'%(base)s/%(user)s/forms/%(form)s' % data
 
