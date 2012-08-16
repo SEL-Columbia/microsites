@@ -8,7 +8,7 @@ from microsite.utils import dump_json, load_json
 from microsite.models import Option
 from microsite.bamboo import getset_bamboo_dataset
 from microsite.barcode import b64_random_qrcode
-from microsite.decorators import project_required
+from microsite.decorators import unconfigured_project_required
 
 
 DEFAULT_IDS = 5
@@ -40,7 +40,7 @@ class OptionForm(forms.ModelForm):
         return dump_json(self.cleaned_data.get('json_value'))
 
 
-@project_required
+@unconfigured_project_required
 def idgen(request, nb_ids=DEFAULT_IDS):
 
     context = {'category': 'idgen'}

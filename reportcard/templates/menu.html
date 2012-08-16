@@ -3,7 +3,7 @@
     <li {% if category = 'home' %}class="active"{% endif %}><a href="{% url home %}">{% trans "Home" %}</a></li>
         <li {% if category = 'reports' %}class="active"{% endif %}><a href="{% url reports %}">{% trans "Report cards" %}</a></li>
         <li {% if category = 'teachers' %}class="active"{% endif %}><a href="{% url teachers %}">{% trans "Teachers" %}</a></li>
-    <li {% if category = 'idgen' %}class="active"{% endif %}><a href="{% url idgen None %}" title="Generated IDs">{% trans "Teachers' ID cards" %}</a></li>
+    <li {% if category = 'idgen' %}class="active"{% endif %}><a href="{% url idgen None %}" title="Print blank Teachers' cards">{% trans "New ID cards" %}</a></li>
     <li {% if category = 'submissions' %}class="active"{% endif %}><a href="{% url submissions %}">{% trans "Submissions" %}</a></li>
     <!-- <li {% if category = 'help' %}class="active"{% endif %}><a href="{% url help %}">{% trans "help" %}</a></li> -->
     <li {% if category = 'form' %}class="active"{% endif %}><a href="{% url form %}">{% trans "Literacy Form" %}</a></li>

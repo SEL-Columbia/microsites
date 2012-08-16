@@ -16,6 +16,7 @@
 {% for id in generated_ids %}
     <tr><td><img src="data:image/png;base64,{{ id.1 }}" alt="{{ id.0 }}"/></td>
         <td><strong>{% trans "ID: " %}</strong>{{ id.0 }}<br />
+            <strong>{% trans "Short ID: " %}</strong>{{ id.2 }}<br />
             <strong>{% trans "Name: " %}</td></tr>
 {% endfor %}
 </tbody>
