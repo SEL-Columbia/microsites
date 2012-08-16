@@ -33,13 +33,16 @@ def home(request):
 
     # total number of submissions
     try:
-        nb_submissions = count_submissions(request.user.project, u'rating')
+        nb_submissions = int(count_submissions(request.user.project,
+                                           u'general_information_age'))
     except ErrorRetrievingBambooData:
         nb_submissions = None
 
     # total number of registered teachers
     try:
-        nb_teachers = count_submissions(request.user.project, u'rating')
+        nb_teachers = count_submissions(request.user.project,
+                                        u'school_district',
+                                        is_registration=True)
     except ErrorRetrievingBambooData:
         nb_teachers = None
 
