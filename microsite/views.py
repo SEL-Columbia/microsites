@@ -75,8 +75,9 @@ def options(request):
             for of in forms:
                 of.save()
 
-            # try to update bamboo dataset
+            # try to update bamboo datasets
             getset_bamboo_dataset(request.user.project)
+            getset_bamboo_dataset(request.user.project, is_registration=True)
 
             redirect(options)
 
