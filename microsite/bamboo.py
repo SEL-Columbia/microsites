@@ -27,7 +27,7 @@ def getset_bamboo_dataset(project, is_registration=False):
     try:
         response = json.loads(req.text)
         bamboo_dataset = Option.objects.get(key=key, project=project)
-        bamboo_dataset.value = response.get(key)
+        bamboo_dataset.value = response.get('bamboo_dataset')
         bamboo_dataset.save()
     except:
         return False

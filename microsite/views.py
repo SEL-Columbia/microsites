@@ -79,7 +79,7 @@ def options(request):
             getset_bamboo_dataset(request.user.project)
             getset_bamboo_dataset(request.user.project, is_registration=True)
 
-            redirect(options)
+            return redirect(options)
 
     else:
         forms = [OptionForm(prefix=str(option), instance=option) 
