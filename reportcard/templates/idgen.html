@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block page_title %}Blank Teachers' cards{% endblock %}
+
+{% block bodyclass %}idgen{% endblock %}
+
+{% block content %}
+<h1>{% trans "Generated IDs &amp; Codes" %}</h1>
+<p class="notice">{% trans "Use the print function of your Web browser." %}</p>
+
+{% if generated_ids %}
+<table class="table table-striped table-condensed">
+{% for id in generated_ids %}
+    <tr><td class="qrcol"><img src="data:image/png;base64,{{ id.1 }}" alt="{{ id.0 }}"/></td>
+        <td style="vertical-align: middle;">
+            <table class="table table-condensed table-striped table-bordered">
+                <tr><td style="width: 7em;">Short ID</td><td class="">{{ id.2 }}</td></tr>
+                <tr><td>Full Name</td><td></td></tr>
+                <tr><td>School Name</td><td></td></tr>
+                <!-- <tr><td colspan="2"></td></tr> -->
+            </table>
+        </td></tr>
+{% endfor %}
+</table>
+{% else %}
+<p>{% trans "No IDs generated." %}</p>
+{% endif %}
+
+{% endblock %}
+
+<strong>{% trans "Short ID: " %}</strong><br />
+<strong>{% trans "Teacher's Name: " %}</strong><br />
+<strong>{% trans "Teacher's School: " %}</strong><br /></td>
