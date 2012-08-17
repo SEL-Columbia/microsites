@@ -30,6 +30,17 @@ from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_formjson_url)
 
 
+def get_id_from_mixed(strid):
+    ''' temp function until we get rid of non-URL IDs '''
+    try:
+        uid, sid = get_ids_from_url(strid)
+    # in case barcode is uuid and not urlid
+    except ValueError:
+        uid = strid
+        sid = short_id_from(uid)
+    return uid, sid
+
+
 @project_required
 def home(request):
     context = {'category': 'home'}
@@ -84,9 +95,12 @@ def list_submissions(request):
 
     context = {'category': 'submissions'}
 
-    submissions_list = [{'name': u"Kabuyanda P.S",},
-                        {'name': u"Markala Zanbugu"},
-                        {'name': u"Les mots"}]
+    submissions_list = bamboo_query(request.user.project)
+
+    for submission in submissions_list:
+        uid, sid = get_id_from_mixed(submission.get('teacher_barcode', ''))
+        submission['teacher_uid_'] = uid
+        submission['teacher_short_id_'] = sid
 
     paginator = FlynsarmyPaginator(submissions_list, 10, adjacent_pages=2)
 
@@ -116,12 +130,7 @@ def list_teachers(request):
         if not teacher.get('barcode', None):
             continue
         
-        try:
-            uid, sid = get_ids_from_url(teacher.get('barcode', ''))
-        # in case barcode is uuid and not urlid
-        except ValueError:
-            uid = teacher.get('barcode')
-            sid = short_id_from(uid)
+        uid, sid = get_id_from_mixed(teacher.get('barcode', ''))
         
         teacher['uid_'] = teacher.get('barcode', None)
         teacher['short_id_'] = sid
