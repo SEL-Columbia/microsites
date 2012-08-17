@@ -6,7 +6,7 @@ import requests
 
 from microsite.models import Option
 from microsite.formhub import get_formhub_form_public_api_url
-from microsite.utils import get_option, load_json
+from microsite.utils import get_option, load_json, dump_json
 
 
 class ErrorRetrievingBambooData(IOError):
@@ -121,7 +121,8 @@ def count_submissions(project, field, method='count', is_registration=False):
 def bamboo_query(project,
                  select=None, query=None, group=None,
                  as_summary=False,
-                 is_registration=False):
+                 is_registration=False,
+                 first=False, last=False):
 
     params = {
         'select': select,
@@ -133,6 +134,9 @@ def bamboo_query(project,
     for key, value in params.items():
         if not value:
             params.pop(key)
+        else:
+            if isinstance(value, dict):
+                params[key] = dump_json(value)
 
     if as_summary:
         url = get_bamboo_dataset_summary_url(project, is_registration)
@@ -146,8 +150,15 @@ def bamboo_query(project,
                                         % req.status_code)
 
     try:
-        return load_json(req.text)
+        response = load_json(req.text)
+        if last:
+            return response[-1]
+        elif first:
+            return response[0]
+        else:
+            return response 
     except Exception as e:
+        print(req.text)
         raise ErrorParsingBambooData(e.message)
 
 
@@ -168,5 +179,6 @@ def bamboo_store_calculation(project, formula_name, formula,
     try:
         return load_json(req.text)
     except Exception as e:
+        print(req.text)
         raise ErrorParsingBambooData(e.message)
 

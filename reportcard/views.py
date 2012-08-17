@@ -112,20 +112,23 @@ def list_teachers(request):
     teachers_list = bamboo_query(request.user.project,
                                  is_registration=True)
 
-    from pprint import pprint as pp
-    pp(teachers_list)
-
     for index, teacher in enumerate(teachers_list):
-        if teacher.get('barcode', None):
-            try:
-                teacher['short_id_'] = \
-                                     get_ids_from_url(teacher.get('barcode')[1])
-            # in case barcode is uuid and not urlid
-            except ValueError:
-                teacher['short_id_'] = short_id_from(teacher.get('barcode'))
-        else:
-            teacher['short_id_'] = teacher.get('written_id', None)
+        if not teacher.get('barcode', None):
+            continue
+        
+        try:
+            uid, sid = get_ids_from_url(teacher.get('barcode', ''))
+        # in case barcode is uuid and not urlid
+        except ValueError:
+            uid = teacher.get('barcode')
+            sid = short_id_from(uid)
+        
+        teacher['uid_'] = teacher.get('barcode', None)
+        teacher['short_id_'] = sid
         teachers_list[index] = teacher
+
+    # sort by name
+    teachers_list.sort(key=lambda t: t['tchr_name'])
 
     paginator = FlynsarmyPaginator(teachers_list, 10, adjacent_pages=2)
 
@@ -140,6 +143,21 @@ def list_teachers(request):
     context.update({'teachers': teachers})
 
     return render(request, 'list_teachers.html', context)
+
+
+@project_required
+def detail_teacher(request, uuid, sid):
+
+    context = {'category': 'teachers'}
+
+    teacher = bamboo_query(request.user.project,
+                           query={'barcode': uuid},
+                           first=True,
+                           is_registration=True)
+
+    context.update({'teacher': teacher})
+
+    return render(request, 'detail_teacher.html', context)
 
 
 @project_required

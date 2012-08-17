@@ -12,7 +12,7 @@
 </thead>
 <tbody>
 {% for teacher in teachers %}
-<tr><td>{{ teacher.tchr_name|upper }}</td><td>{{ teacher.school|KeyName:keycat }}</td><td>{{ teacher.short_id_|NAdefault }}</td></tr>
+<tr><td><a href="{% url teacher teacher.uid_ teacher.short_id_ %}">{{ teacher.tchr_name|upper }}</a></td><td>{{ teacher.school|KeyName:keycat }}</td><td>{{ teacher.short_id_|NAdefault }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
@@ -20,5 +20,3 @@
 {% include 'pagination.html' with paginator=teachers %}
 
 {% endblock %}
-
-{% for page_num in teachers.paginator.page_range %}{% endfor %}
