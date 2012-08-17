@@ -20,7 +20,7 @@ def generate_qrcodefile(message, filename=None):
     return code
 
 
-def generate_qrcode(message, stream=StringIO.StringIO(),
+def generate_qrcode(message, stream,
                     eclevel='M', margin=10,
                     data_mode='8bits', format='PNG'):
 
@@ -48,7 +48,8 @@ def b64_random_qrcode(as_tuple=False, as_url=False):
     else:
         qr_id = get_random_id()
         short_id = short_id_from(qr_id)
-    b64_data = base64.b64encode(generate_qrcode(qr_id).getvalue())
+    b64_data = base64.b64encode(generate_qrcode(qr_id,
+                                                StringIO.StringIO()).getvalue())
 
     if as_tuple:
         return (qr_id, b64_data, short_id)
