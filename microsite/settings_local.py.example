@@ -1,5 +1,5 @@
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -15,10 +15,10 @@ ROOT_DIR = os.path.dirname(os.path.dirname(abs_path))
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'microsite.db',
-        'USER': '',
-        'PASSWORD': '',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'reportcard',
+        'USER': 'reportcard',
+        'PASSWORD': 'reportcard',
         'HOST': '',
         'PORT': '',
     }
@@ -28,14 +28,13 @@ DATABASES = {
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
-# TIME_ZONE = 'America/New_York'
-TIME_ZONE = 'Africa/Bamako'
+TIME_ZONE = 'America/New_York'
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join(ROOT_DIR, 'collected_static')
+STATIC_ROOT = os.path.join(ROOT_DIR, 'static')
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -49,7 +48,7 @@ STATICFILES_DIRS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'lkq3-5$z9wq&amp;44&amp;p1aaey5-p@3egm6fk)$_toh8jf)6g(w9yj#'
+SECRET_KEY = 'change this'
 
 # overload apps list
 INSTALLED_APPS_EXTRA = ['reportcard']
@@ -58,4 +57,10 @@ INSTALLED_APPS_EXTRA = ['reportcard']
 DEFAULT_APP = 'reportcard'
 
 # User Profile
-# AUTH_PROFILE_MODULE = 'accounts.UserProfile'
+# AUTH_PROFILE_MODULE = 'microsite.MicrositeUser'
+
+# Base URL for Generated IDs (mandatory if using idgen)
+IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
+
+# IDs format (optional)
+# IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'

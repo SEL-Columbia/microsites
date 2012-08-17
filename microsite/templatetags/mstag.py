@@ -5,6 +5,7 @@ from django import template
 
 from microsite.utils import get_name_for
 from microsite.models import Project
+from microsite.barcode import get_ids_from_url
 
 register = template.Library()
 
@@ -32,3 +33,21 @@ def name_for_key(key, project_cat):
         return key
 
     return get_name_for(project, category, key)
+
+
+@register.filter(name='shortID')
+def short_id_from_urlid(url_id):
+    try:
+        uid, sid = get_ids_from_url(url_id)
+        return sid
+    except:
+        return url_id
+
+
+@register.filter(name='UUID')
+def uid_from_urlid(url_id):
+    try:
+        uid, sid = get_ids_from_url(url_id)
+        return uid
+    except:
+        return url_id

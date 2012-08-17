@@ -54,7 +54,7 @@ def idgen(request, nb_ids=DEFAULT_IDS):
     all_ids = []
     for i in xrange(0, nb_ids):
         # this is a tuple of (ID, B64_QRPNG)
-        all_ids.append(b64_random_qrcode(as_tuple=True))
+        all_ids.append(b64_random_qrcode(as_tuple=True, as_url=True))
 
     context.update({'generated_ids': all_ids})
 

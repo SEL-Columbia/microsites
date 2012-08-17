@@ -6,6 +6,7 @@ import base64
 import uuid
 
 from elaphe import barcode
+from django.conf import settings
 
 
 def generate_qrcodefile(message, filename=None):
@@ -38,15 +39,19 @@ def generate_qrcode(message, stream=StringIO.StringIO(),
     return stream
 
 
-def b64_random_qrcode(as_tuple=False):
+def b64_random_qrcode(as_tuple=False, as_url=False):
     ''' base64 encoded PNG image representing a QRCode of a random ID '''
 
-    qr_id = get_random_id()
-    qr_short_id = short_id_from(qr_id)
+
+    if as_url:
+        qr_id, uid, short_id = get_random_urlid(as_tuple=True)
+    else:
+        qr_id = get_random_id()
+        short_id = short_id_from(qr_id)
     b64_data = base64.b64encode(generate_qrcode(qr_id).getvalue())
 
     if as_tuple:
-        return (qr_id, b64_data, qr_short_id)
+        return (qr_id, b64_data, short_id)
 
     return b64_data
 
@@ -67,3 +72,21 @@ def hex2dec(s):
 def short_id_from(qr_id):
     ''' short ID is hex form of 10 million modulo on uuid. ~6 chars long'''
     return dec2hex(hex2dec(qr_id) % 10000000)
+
+
+def get_random_urlid(as_tuple=False):
+    uid = get_random_id()
+    sid = short_id_from(uid)
+    base_url = settings.IDGEN_BASE_URI
+    url_id = (settings.IDGEN_FORMAT
+              % {'uuid': uid, 'shortid': sid, 'base_url': base_url})
+    if as_tuple:
+        return (url_id, uid, sid)
+    else:
+        return url_id
+
+
+def get_ids_from_url(url):
+    url_uid , sid = url.rsplit('?short=', 1)
+    _, uid = url_uid.rsplit('/', 1)
+    return (uid, sid)
