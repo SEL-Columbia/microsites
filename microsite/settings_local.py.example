@@ -64,3 +64,5 @@ IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
 
 # IDs format (optional)
 # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
+
+# KEY_NAME_NAMESPACES = [('school_names', u"School Names"),]

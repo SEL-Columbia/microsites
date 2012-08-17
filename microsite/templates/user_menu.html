@@ -3,7 +3,8 @@
 <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span class="icon-user"></span> {{ user.name }} ({{ user.project|NAdefault }}) <span class="caret"></span></a>
 <ul class="dropdown-menu">
     {% if user.is_staff %}
-    <li><a href="{% url options %}">Options</a></li>
+    <li{% ifequal category 'options' %} class="active"{% endifequal %}><a href="{% url options %}">Options</a></li>
+    <li{% ifequal category 'key_name' %} class="active"{% endifequal %}><a href="{% url key_name %}">Key-Name Pairs</a></li>
     <li><a href="/admin/auth/user/">Users</a></li>
     <li class="divider"></li>
     {% endif %}

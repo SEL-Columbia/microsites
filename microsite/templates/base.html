@@ -48,6 +48,12 @@
         {% endblock %}
         </header>
 
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert {% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
 		<div id="content-wrapper" class="container-fluid">
 			<section id="content">
                 {% block content %}Hello World{% endblock %}

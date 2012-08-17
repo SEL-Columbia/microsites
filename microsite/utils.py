@@ -93,10 +93,35 @@ def get_option(project, option):
         raise ProjectUnconfigured(project)
 
 
-def get_name_for(project, category, key):
+def get_name_for(project, namespace, key):
     from microsite.models import KeyNamePair
     try:
         return KeyNamePair.objects.get(project=project, 
-                                       category=category, key=key).name
+                                       namespace=namespace, key=key).name
     except KeyNamePair.DoesNotExist:
         return key
+
+
+def import_csv_content_into_namespace(project, namespace, csv_content):
+    from microsite.models import KeyNamePair
+
+    objects = []
+    first = True
+    for line in csv_content.splitlines():
+        if first:
+            first = False
+            continue
+        key, name = line.split(',', 1)
+        try:
+            knp = KeyNamePair.objects.get(project=project,
+                                          namespace=namespace,
+                                          key=key)
+        except:
+            knp = KeyNamePair(project=project,
+                              namespace=namespace,
+                              key=key)
+        knp.name = name
+        objects.append(knp)
+
+    # save now that we haven't exploded
+    [knp.save() for knp in objects]

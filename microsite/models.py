@@ -80,11 +80,11 @@ class KeyNamePair(models.Model):
         app_label = 'microsite'
         verbose_name = _(u"Key-Name Pair")
         verbose_name_plural = _(u"Key-Name Pairs")
-        unique_together = ('project', 'category', 'key')
+        unique_together = ('project', 'namespace', 'key')
 
     project = models.ForeignKey(Project)
-    category = models.SlugField(max_length=75, verbose_name=_(u"Category"),
-                                help_text=_(u"Name of your set"))
+    namespace = models.SlugField(max_length=75, verbose_name=_(u"Namespace"),
+                                 help_text=_(u"Name of your set"))
     key = models.SlugField(max_length=200, verbose_name=_(u"Key"),
                            help_text=_(u"Identifier of the string"))
     name = models.CharField(max_length=70, blank=True,
@@ -92,7 +92,7 @@ class KeyNamePair(models.Model):
 
     def __unicode__(self):
         return (ugettext(u"%(cat)s/%(key)s") 
-                         % {'key': self.key, 'cat': self.category})
+                         % {'key': self.key, 'cat': self.namespace})
 
 
 class MicrositeUser(models.Model):

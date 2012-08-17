@@ -28,6 +28,11 @@ urlpatterns = patterns('',
     # settings management
     url(r'^options/?$', 'microsite.views.options', name='options'),
 
+    # Key-Name Pair
+    url(r'^key-name/?$', 'microsite.views.key_name', name='key_name'),
+    url(r'^key-name/(?P<namespace>[a-z0-9\-\_\.]+)?/csv$',
+        'microsite.views.key_name_csv_export', name='key_name_csv'),
+
     # default help page 
     url(r'^help/?$', 
         direct_to_template, {'template': 'help.html',

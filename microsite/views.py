@@ -1,11 +1,18 @@
 
+import datetime
+
 from django import forms
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import redirect
+from django.conf import settings
+from django.views.decorators.csrf import csrf_protect
+from django.http import HttpResponse, Http404
+from django.contrib import messages
 
-from microsite.utils import dump_json, load_json
-from microsite.models import Option
+from microsite.utils import (dump_json, load_json,
+                             import_csv_content_into_namespace)
+from microsite.models import Option,KeyNamePair
 from microsite.bamboo import getset_bamboo_dataset
 from microsite.barcode import b64_random_qrcode
 from microsite.decorators import unconfigured_project_required
@@ -76,8 +83,22 @@ def options(request):
                 of.save()
 
             # try to update bamboo datasets
-            getset_bamboo_dataset(request.user.project)
-            getset_bamboo_dataset(request.user.project, is_registration=True)
+            if getset_bamboo_dataset(request.user.project):
+                messages.success(request, 
+                                 u"bamboo dataset retrieved successfuly.")
+            else:
+                messages.warning(request,
+                                 u"Unable to retrieve bamboo dataset.")
+ 
+            if getset_bamboo_dataset(request.user.project,
+                                     is_registration=True):
+                messages.success(request,
+                                 u"bamboo dataset (registration) "
+                                 u"retrieved successfuly.")
+            else:
+                messages.warning(request, 
+                                 u"Unable to retrieve bamboo "
+                                 u"dataset (registration).")
 
             return redirect(options)
 
@@ -90,6 +111,73 @@ def options(request):
     context.update({'forms': forms})
 
     return render(request, 'options.html', context)
+
+
+@csrf_protect
+@unconfigured_project_required
+@permission_required('keynamepair.can_edit')
+def key_name(request):
+
+    context = {'category': 'key_name'}
+
+    class UploadFileForm(forms.Form):
+        title = forms.CharField(max_length=50)
+        file  = forms.FileField()
+
+    if request.method == 'POST':
+
+        namespace = request.POST.get('namespace', None)
+        if (not namespace
+            or not namespace in [x[0] for x in settings.KEY_NAME_NAMESPACES]):
+            context.update({'namespace_invalid': True})
+
+        uploaded_file = request.FILES.get('csv_file')
+        if uploaded_file and namespace:
+            try:
+                import_csv_content_into_namespace(request.user.project,
+                                                  namespace,
+                                                  uploaded_file.read())
+                messages.success(request, 
+                                 u"CSV file has been successfuly imported.")
+                return redirect(key_name)
+            except:
+                context.update({'csv_file_error_parsing': True})
+            
+        else:
+            context.update({'csv_file_error_missing': True})
+
+    namespaces = []
+    for ns_key, ns_name in settings.KEY_NAME_NAMESPACES:
+        namespaces.append((ns_key, ns_name, 
+                           KeyNamePair.objects
+                                      .filter(namespace=ns_key,
+                                              project=request.user.project)
+                                      .order_by('key')))
+    context.update({'namespaces': namespaces})
+
+    return render(request, 'key_name.html', context)
+
+
+@unconfigured_project_required
+def key_name_csv_export(request, namespace):
+
+    if not namespace in [x[0] for x in settings.KEY_NAME_NAMESPACES]:
+        raise Http404(u"Requested namespace (%(ns)s) does not exist." 
+                      % {'ns': namespace})
+
+    response = HttpResponse(mimetype='application/csv')
+    fname = (u"%(ns)s_%(date)s.csv" 
+             % {'ns': namespace, 
+                'date': datetime.datetime.now().strftime('%Y%m%d')})
+    response['Content-Disposition'] = 'attachment; filename=%s' % fname
+    response.write('Key,Name\n')
+    for knp in (KeyNamePair.objects.filter(namespace=namespace,
+                                           project=request.user.project)
+                                   .order_by('key')):
+        response.write('%(key)s,%(name)s\n' % {'key': knp.key,
+                                               'name': knp.name})
+
+    return response
 
 
 def login_greeter(request):
