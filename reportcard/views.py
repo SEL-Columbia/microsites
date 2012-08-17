@@ -11,8 +11,9 @@ from microsite.utils import download_formhub
 from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.models import Option
 from microsite.decorators import project_required
-from microsite.barcode import short_id_from
-from microsite.bamboo import ErrorRetrievingBambooData, count_submissions, bamboo_query
+from microsite.barcode import get_ids_from_url, short_id_from
+from microsite.bamboo import (ErrorRetrievingBambooData,
+                              count_submissions, bamboo_query)
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_public_api_url,
                                get_formhub_form_datacsv_url,
@@ -116,7 +117,12 @@ def list_teachers(request):
 
     for index, teacher in enumerate(teachers_list):
         if teacher.get('barcode', None):
-            teacher['short_id_'] = short_id_from(teacher.get('barcode'))
+            try:
+                teacher['short_id_'] = \
+                                     get_ids_from_url(teacher.get('barcode')[1])
+            # in case barcode is uuid and not urlid
+            except ValueError:
+                teacher['short_id_'] = short_id_from(teacher.get('barcode'))
         else:
             teacher['short_id_'] = teacher.get('written_id', None)
         teachers_list[index] = teacher
