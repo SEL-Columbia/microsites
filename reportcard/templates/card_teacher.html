@@ -6,6 +6,7 @@
 
 {% block content %}
 <h1>{{ teacher.tchr_name }}</h1>
-<p><a href="{% url teacher_card teacher.uid_ %}">Reprint Teacher's card</a></p>
+<img src="data:image/png;base64,{{ teacher.qrcode }}" />
+<p>Print this card...</p>
 
 {% endblock %}

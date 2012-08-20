@@ -23,7 +23,7 @@
 </thead>
 <tbody>
 {% for teacher in teachers %}
-<tr><td><a href="{% url teacher teacher.uid_ %}">{{ teacher.tchr_name|upper }}</a></td><td>{{ teacher.school|KeyName:keycat }}</td><td>{{ teacher.short_id_|NAdefault }}</td></tr>
+<tr><td><a href="{% url teacher teacher.uid_ %}">{{ teacher.tchr_name|upper }}</a></td><td>{{ teacher.school|KeyName:keycat }}</td><td>{{ teacher.sid_|NAdefault }}</td></tr>
 {% endfor %}
 </tbody>
 </table>

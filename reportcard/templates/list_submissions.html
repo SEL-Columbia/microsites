@@ -11,7 +11,7 @@
 </thead>
 <tbody>
 {% for submission in submissions %}
-<tr><td><a href="{% url teacher submission.teacher_uid_ submission.teacher_short_id_ %}">{{ submission.teacher_barcode }}</a></td><td>{{ submission.general_information_age }}</td><td>{{ submission.general_information_sex }}</td><td>{{ submission.learning_levels_numeracy_nothing }}</td><td>{{ submission.learning_levels_reading_nothing }}</td></tr>
+<tr><td><a href="{% url teacher submission.teacher_uid_ %}">{{ submission.teacher_sid_ }}</a></td><td>{{ submission.general_information_age }}</td><td>{{ submission.general_information_sex }}</td><td>{{ submission.learning_levels_numeracy_nothing }}</td><td>{{ submission.learning_levels_reading_nothing }}</td></tr>
 {% endfor %}
 </tbody>
 </table>

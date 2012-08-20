@@ -3,7 +3,7 @@ import json
 
 import requests
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger
 
 from constants import FORMHUB_URL, DEFAULT_LOGIN, DEFAULT_PASSWORD, BAMBOO_URL
@@ -11,7 +11,8 @@ from microsite.utils import download_formhub
 from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.models import Option
 from microsite.decorators import project_required
-from microsite.barcode import get_ids_from_url, build_urlid_with, short_id_from
+from microsite.barcode import (build_urlid_with,
+                               short_id_from, detailed_id_dict, b64_qrcode)
 from microsite.bamboo import (ErrorRetrievingBambooData,
                               count_submissions, bamboo_query)
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
@@ -56,30 +57,6 @@ def home(request):
 
 
 @project_required
-def list_reports(request):
-
-    context = {'category': 'reports'}
-
-    reports_list = [{'name': u"Kabuyanda P.S",},
-                    {'name': u"Markala Zanbugu"},
-                    {'name': u"Les mots"}]
-
-    paginator = FlynsarmyPaginator(reports_list, 10, adjacent_pages=2)
-
-    page = request.GET.get('page')
-    try:
-        reports = paginator.page(page)
-    except PageNotAnInteger:
-        reports = paginator.page(1)
-    except EmptyPage:
-        reports = paginator.page(paginator.num_pages)
-
-    context.update({'classes': reports})
-
-    return render(request, 'list_classes.html', context)
-
-
-@project_required
 def list_submissions(request):
 
     context = {'category': 'submissions'}
@@ -87,9 +64,7 @@ def list_submissions(request):
     submissions_list = bamboo_query(request.user.project)
 
     for submission in submissions_list:
-        uid, sid = get_ids_from_url(submission.get('teacher_barcode', ''))
-        submission['teacher_uid_'] = uid
-        submission['teacher_short_id_'] = sid
+        submission.update(detailed_id_dict(submission, prefix='teacher_'))
 
     paginator = FlynsarmyPaginator(submissions_list, 10, adjacent_pages=2)
 
@@ -112,18 +87,21 @@ def list_teachers(request):
     context = {'category': 'teachers',
                'keycat': '%s|%s' % (request.user.project.slug, 'school_names')}
 
+    # redirect to a teacher's page if jump_to matches one.
+    jump_to = request.GET.get('jump_to', None)
+
     teachers_list = bamboo_query(request.user.project,
                                  is_registration=True)
 
-    for index, teacher in enumerate(teachers_list):
+    for teacher in teachers_list:
         if not teacher.get('barcode', None):
             continue
-        
-        uid, sid = get_ids_from_url(teacher.get('barcode', ''))
-        
-        teacher['uid_'] = uid
-        teacher['short_id_'] = sid
-        teachers_list[index] = teacher
+
+        teacher.update(detailed_id_dict(teacher))
+
+        # requested teacher exists ; redirect
+        if teacher.get('sid_') == jump_to:
+            return redirect(detail_teacher, uid=teacher.get('uid_'))
 
     # sort by name
     teachers_list.sort(key=lambda t: t['tchr_name'])
@@ -144,24 +122,46 @@ def list_teachers(request):
 
 
 @project_required
-def detail_teacher(request, uuid):
+def detail_teacher(request, uid):
 
     context = {'category': 'teachers'}
 
     sid = request.GET.get('short', None)
     if not sid:
-        sid = short_id_from(uuid)
+        sid = short_id_from(uid)
 
-    barcode = build_urlid_with(uuid, sid)
+    barcode = build_urlid_with(uid, sid)
 
     teacher = bamboo_query(request.user.project,
                            query={'barcode': barcode},
                            first=True,
                            is_registration=True)
+    teacher.update(detailed_id_dict(teacher))
 
     context.update({'teacher': teacher})
 
     return render(request, 'detail_teacher.html', context)
+
+
+@project_required
+def card_teacher(request, uid):
+
+    context = {'category': 'teachers'}
+
+    sid = short_id_from(uid)
+    urlid = build_urlid_with(uid, sid)
+
+    teacher = bamboo_query(request.user.project,
+                           query={'barcode': urlid},
+                           first=True,
+                           is_registration=True)
+
+    teacher.update(detailed_id_dict(teacher))
+    teacher.update({'qrcode': b64_qrcode(urlid)})
+
+    context.update({'teacher': teacher})
+
+    return render(request, 'card_teacher.html', context)
 
 
 @project_required
@@ -211,14 +211,14 @@ def update_data(request):
 
     # 2. retrieve uuid or _userform_id
     #    match with expected ID or die
-    uuid = json_data.get('formhub/uuid', None)
+    uid = json_data.get('formhub/uuid', None)
     userform_id = json_data.get('_userform_id', None)
 
     # we might be interested in going this way in the future
     # but it's not implemented in FH yet.
-    if uuid and False:
+    if uid and False:
         download_url = ('%(root)s/forms/%(uuid)s/data.csv' 
-                        % {'root': FORMHUB_URL, 'uuid': 'uuid'})
+                        % {'root': FORMHUB_URL, 'uuid': uid})
     else:
         # /!\ UNSAFE. separator (_) is a valid username char.
         username, form_id = userform_id.split('_', 1)

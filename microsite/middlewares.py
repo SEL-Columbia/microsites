@@ -5,11 +5,11 @@ from microsite.utils import ProjectUnconfigured
 
 class AuthenticationMiddleware(object):
     def process_request(self, request):
-        assert(hasattr(request, 'user'),
-               u"The microsite.AuthenticationMiddleware requires "
-               u"Django authentication middleware to be installed. "
-               u"Edit your MIDDLEWARE_CLASSES setting to insert "
-               u"'django.contrib.auth.middleware.AuthenticationMiddleware'.")
+        assert hasattr(request, 'user'), \
+               (u"The microsite.AuthenticationMiddleware requires " 
+                u"Django authentication middleware to be installed. "
+                u"Edit your MIDDLEWARE_CLASSES setting to insert "
+                u"'django.contrib.auth.middleware.AuthenticationMiddleware'.")
 
         try:
             request.user = request.user.get_profile()
