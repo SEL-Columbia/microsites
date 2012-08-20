@@ -78,9 +78,8 @@ def short_id_from(qr_id):
 def get_random_urlid(as_tuple=False):
     uid = get_random_id()
     sid = short_id_from(uid)
-    base_url = settings.IDGEN_BASE_URI
-    url_id = (settings.IDGEN_FORMAT
-              % {'uuid': uid, 'shortid': sid, 'base_url': base_url})
+    url_id = build_urlid_with(uid, sid)
+
     if as_tuple:
         return (url_id, uid, sid)
     else:
@@ -91,3 +90,9 @@ def get_ids_from_url(url):
     url_uid , sid = url.rsplit('?short=', 1)
     _, uid = url_uid.rsplit('/', 1)
     return (uid, sid)
+
+
+def build_urlid_with(uuid, shortid):
+    return (settings.IDGEN_FORMAT
+            % {'uuid': uuid, 'shortid': shortid,
+               'base_url': settings.IDGEN_BASE_URI})

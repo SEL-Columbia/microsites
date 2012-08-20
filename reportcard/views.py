@@ -11,7 +11,7 @@ from microsite.utils import download_formhub
 from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.models import Option
 from microsite.decorators import project_required
-from microsite.barcode import get_ids_from_url, short_id_from
+from microsite.barcode import get_ids_from_url, build_urlid_with, short_id_from
 from microsite.bamboo import (ErrorRetrievingBambooData,
                               count_submissions, bamboo_query)
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
@@ -28,17 +28,6 @@ from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_formxml_url,
                                get_formhub_form_formxls_url,
                                get_formhub_form_formjson_url)
-
-
-def get_id_from_mixed(strid):
-    ''' temp function until we get rid of non-URL IDs '''
-    try:
-        uid, sid = get_ids_from_url(strid)
-    # in case barcode is uuid and not urlid
-    except ValueError:
-        uid = strid
-        sid = short_id_from(uid)
-    return uid, sid
 
 
 @project_required
@@ -98,7 +87,7 @@ def list_submissions(request):
     submissions_list = bamboo_query(request.user.project)
 
     for submission in submissions_list:
-        uid, sid = get_id_from_mixed(submission.get('teacher_barcode', ''))
+        uid, sid = get_ids_from_url(submission.get('teacher_barcode', ''))
         submission['teacher_uid_'] = uid
         submission['teacher_short_id_'] = sid
 
@@ -130,9 +119,9 @@ def list_teachers(request):
         if not teacher.get('barcode', None):
             continue
         
-        uid, sid = get_id_from_mixed(teacher.get('barcode', ''))
+        uid, sid = get_ids_from_url(teacher.get('barcode', ''))
         
-        teacher['uid_'] = teacher.get('barcode', None)
+        teacher['uid_'] = uid
         teacher['short_id_'] = sid
         teachers_list[index] = teacher
 
@@ -155,12 +144,18 @@ def list_teachers(request):
 
 
 @project_required
-def detail_teacher(request, uuid, sid):
+def detail_teacher(request, uuid):
 
     context = {'category': 'teachers'}
 
+    sid = request.GET.get('short', None)
+    if not sid:
+        sid = short_id_from(uuid)
+
+    barcode = build_urlid_with(uuid, sid)
+
     teacher = bamboo_query(request.user.project,
-                           query={'barcode': uuid},
+                           query={'barcode': barcode},
                            first=True,
                            is_registration=True)
 
