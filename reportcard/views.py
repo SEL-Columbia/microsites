@@ -11,7 +11,7 @@ from microsite.utils import download_formhub
 from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.models import Option
 from microsite.decorators import project_required
-from microsite.barcode import (build_urlid_with,
+from microsite.barcode import (build_urlid_with, get_ids_from_url,
                                short_id_from, detailed_id_dict, b64_qrcode)
 from microsite.bamboo import (ErrorRetrievingBambooData,
                               count_submissions, bamboo_query)
@@ -85,13 +85,27 @@ def list_submissions(request):
 def list_teachers(request):
 
     context = {'category': 'teachers',
-               'keycat': '%s|%s' % (request.user.project.slug, 'school_names')}
+               'schoolcat': '%s|%s' 
+               % (request.user.project.slug, 'school_names')}
 
     # redirect to a teacher's page if jump_to matches one.
     jump_to = request.GET.get('jump_to', None)
 
     teachers_list = bamboo_query(request.user.project,
                                  is_registration=True)
+
+    ''' Not using the `group` method of bamboo here as it's innefiscient
+        for our use case: it would request multiple inner-loops and uglify
+        the templates.
+
+        Instead, we grab the raw list of teachers and then group them
+        by the school name resulting in a 2-dim list.
+
+        While it works, I believe the pagination is done at school level
+        making it useless for cases where there are many teachers per school '''
+
+    # school list container ; each key should contain list of teachers.
+    school_list = {}
 
     for teacher in teachers_list:
         if not teacher.get('barcode', None):
@@ -103,20 +117,23 @@ def list_teachers(request):
         if teacher.get('sid_') == jump_to:
             return redirect(detail_teacher, uid=teacher.get('uid_'))
 
-    # sort by name
-    teachers_list.sort(key=lambda t: t['tchr_name'])
+        if teacher.get('school') in school_list:
+            school_list.get(teacher.get('school')).append(teacher)
+        else:
+            school_list[teacher.get('school')] = [teacher,]
 
-    paginator = FlynsarmyPaginator(teachers_list, 10, adjacent_pages=2)
+    paginator = FlynsarmyPaginator(school_list.values(), 10, adjacent_pages=2)
 
-    page = request.GET.get('page')
+    page = request.GET.get('page', 1)
     try:
-        teachers = paginator.page(page)
+        schools = paginator.page(page)
     except PageNotAnInteger:
-        teachers = paginator.page(1)
+        schools = paginator.page(1)
     except EmptyPage:
-        teachers = paginator.page(paginator.num_pages)
+        schools = paginator.page(paginator.num_pages)
 
-    context.update({'teachers': teachers})
+    # context.update({'teachers': teachers})
+    context.update({'schools': schools})
 
     return render(request, 'list_teachers.html', context)
 

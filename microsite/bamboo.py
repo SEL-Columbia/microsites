@@ -122,7 +122,8 @@ def bamboo_query(project,
                  select=None, query=None, group=None,
                  as_summary=False,
                  is_registration=False,
-                 first=False, last=False):
+                 first=False, last=False,
+                 print_url=False):
 
     params = {
         'select': select,
@@ -144,6 +145,10 @@ def bamboo_query(project,
         url = get_bamboo_dataset_url(project, is_registration)
 
     req = requests.get(url, params=params)
+
+    # debugging
+    if print_url:
+        print(req.url)
 
     if not req.status_code in (200, 202):
         raise ErrorRetrievingBambooData(u"%d Status Code received."

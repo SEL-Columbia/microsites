@@ -16,14 +16,17 @@
 </form>
 </div>
 
-<h1>List of registered teachers, sorted by Name</h1>
+<h1>List of registered teachers, by school</h1>
 <table class="table table-striped table-bordered table-condensed">
 <thead>
-    <tr><th>Name</th><th>School</th><th>Short ID</th></tr>
+    <tr><th>Name</th><th>Short ID</th></tr>
 </thead>
 <tbody>
-{% for teacher in teachers %}
-<tr><td><a href="{% url teacher teacher.uid_ %}">{{ teacher.tchr_name|upper }}</a></td><td>{{ teacher.school|KeyName:keycat }}</td><td>{{ teacher.sid_|NAdefault }}</td></tr>
+{% for school in schools.object_list %}
+<tr><th colspan="3">{{ school.0.school|KeyName:schoolcat }}</td></tr>
+    {% for teacher in school %}
+    <tr><td><a href="{% url teacher teacher.uid_ %}">{{ teacher.tchr_name|upper }}</a></td><td>{{ teacher.sid_|NAdefault }}</td></tr>
+    {% endfor %}
 {% endfor %}
 </tbody>
 </table>
