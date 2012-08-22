@@ -1,0 +1,48 @@
+
+body {
+    padding-top: 60px;
+}
+
+/* IDgen specifics */
+body.idgen * th.qrcol, body.idgen * td.qrcol{
+    width: 150px;
+}
+
+.female-color {
+    color: purple;
+}
+
+.male-color {
+    color: blue;
+}
+
+
+table.reporttable * th {
+    font-weight: bold;
+    text-align: center;
+}
+
+table.reporttable * .agegroup, table.reporttable * .subtotal {
+    text-align: left;
+}
+
+table.reporttable * .subtotal {
+    color: #666;
+}
+
+table.reporttable tr.subtotal td, table.reporttable tr.total td {
+    font-weight: bold;
+}
+
+table.reporttable tr.subtotal td:first-of-type {
+    padding-left: 2em;
+}
+
+table.reporttable * td {
+    text-align: center;
+}
+
+table.reporttable * td:first-of-type {
+    text-align: left;
+    width: 8em;
+}
