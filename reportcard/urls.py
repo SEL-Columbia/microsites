@@ -5,7 +5,6 @@ from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
     url(r'^$', 'reportcard.views.home', name='home'),
-    url(r'^touch$', 'reportcard.views.update_data', name='touch'),
     url(r'^submissions$', 'reportcard.views.list_submissions',
         name='submissions'),
     url(r'^teachers$', 'reportcard.views.list_teachers', name='teachers'),

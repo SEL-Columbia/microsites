@@ -1,17 +1,13 @@
 
-import json
-
-import requests
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger
 
-from constants import FORMHUB_URL, DEFAULT_LOGIN, DEFAULT_PASSWORD, BAMBOO_URL
-from microsite.utils import download_formhub
+from constants import (REPORTS_AGE_GROUPS, 
+                       REPORTS_READING_LEVELS, REPORTS_NUMERACY_LEVELS)
 from microsite.digg_paginator import FlynsarmyPaginator
-from microsite.models import Option
 from microsite.decorators import project_required
-from microsite.barcode import (build_urlid_with, get_ids_from_url,
+from microsite.barcode import (build_urlid_with,
                                short_id_from, detailed_id_dict, b64_qrcode)
 from microsite.bamboo import (ErrorRetrievingBambooData,
                               count_submissions, bamboo_query)
@@ -154,53 +150,21 @@ def detail_teacher_bamboo(request, uid):
 
 
 def detail_teacher_django(request, uid):
+    ''' Report Card View processing data from submissions list/data only
 
-    ''' Report Card View processing data from submissions list/data only '''
+        2 bamboo requests:
+            - teacher data from uuid
+            - list of submissions for that teacher
+
+        All processing/grouping done in python. '''
 
     context = {'category': 'teachers',
                'schoolcat': '%s|%s' 
                % (request.user.project.slug, 'school_names')}
 
-    sid = request.GET.get('short', None)
-    if not sid:
-        sid = short_id_from(uid)
-
-    barcode = build_urlid_with(uid, sid)
-
-    teacher = bamboo_query(request.user.project,
-                           query={'barcode': barcode},
-                           first=True,
-                           is_registration=True)
-    teacher.update(detailed_id_dict(teacher))
-
-
-    age_groups = {
-        u"6-9": (6, 9),
-        u"10-11": (10, 11),
-        u"12-14": (12, 14),
-        u"15-17": (15, 17),
-        u"all": (18, 99),
-    }
-
-    reading_levels = {
-        'learning_levels_literacy_nothing': u"Nothing",
-        'learning_levels_literacy_letters': u"Letters",
-        'learning_levels_literacy_words': u"Words",
-        'learning_levels_literacy_paragraphs': u"Paragraphs",
-        'learning_levels_literacy_story': u"Story",
-    }
-
-    numeracy_levels = {
-        'learning_levels_numeracy_nothing': u"Nothing",
-        'learning_levels_numeracy_num_recognition_1_9': u"1 to 9",
-        'learning_levels_numeracy_num_recognition_10_99': u"10 to 99",
-        'learning_levels_numeracy_subtraction': u"Substractions",
-        'learning_levels_numeracy_division': u"Divisions",
-
-    }
-
     def get_age_group(sub):
-        for key, age_range in age_groups.items():
+        ''' return age group (key str) of a given submission based on age'''
+        for key, age_range in REPORTS_AGE_GROUPS.items():
             if (sub.get(u'general_information_age', 0)
              in range(age_range[0], age_range[1] + 1)):
                 return key
@@ -208,17 +172,19 @@ def detail_teacher_django(request, uid):
 
 
     def init_reports():
+        ''' A reports container with initial values '''
         reports = {}
-        for age_group in age_groups.keys():
+        for age_group in REPORTS_AGE_GROUPS.keys():
             reports[age_group] = {}
             for sex in ('male', 'female', 'total'):
                 reports[age_group][sex] = {}
-                for level in reading_levels.keys() \
-                             + numeracy_levels.keys() + ['total']:
+                for level in REPORTS_READING_LEVELS.keys() \
+                             + REPORTS_NUMERACY_LEVELS.keys() + ['total']:
                     reports[age_group][sex][level] = {'nb': 0, 'percent': None}
         return reports
 
     def compute_report_for(reports, submission, is_numeracy=False):
+        ''' increment counters on all categories for a submission '''
 
         age_group = get_age_group(submission)
         sex = submission.get('general_information_sex')
@@ -239,6 +205,7 @@ def detail_teacher_django(request, uid):
         reports[age_group]['total']['total']['nb'] += 1
 
     def compute_percentages(reports):
+        ''' calculates the percentages fields for the reports dict '''
 
         def pc(num, denum):
             try:
@@ -249,38 +216,30 @@ def detail_teacher_django(request, uid):
         for age_group, ago in reports.items():
             for sex, so in ago.items():
                 for level, lo in so.items():
-                    reports[age_group][sex][level]['percent'] = pc(reports[age_group][sex][level], reports[age_group][sex]['total'])
-
-    submissions = bamboo_query(request.user.project,
-                               query={'teacher_barcode': barcode},
-                               select={'general_information_age': 1,
-                                        'general_information_sex': 1,
-                                        'learning_levels_numeracy_nothing': 1,
-                                        'learning_levels_reading_nothing': 1,
-                                        'school_junior_secondary': 1,
-                                        'school_primary': 1,
-                                        'school_senior_secondary': 1,
-                                        'schooling_status_grades': 1})
-
-    reading_dict = init_reports()
-    numeracy_dict = init_reports()
-
-    for submission in submissions:
-        compute_report_for(reading_dict, submission)
-        compute_report_for(numeracy_dict, submission, is_numeracy=True)
+                    reports[age_group][sex][level]['percent'] = \
+                                            pc(reports[age_group][sex][level], 
+                                            reports[age_group][sex]['total'])
 
     def sort_reports(reports_dict):
+        ''' sort report by Age (asc) then gender keeping total/All at last '''
+
         def cmp_rep(x, y):
             if x == y:
                 return 0
+
+            # 'all' age group is last
             if x == 'all' or y == 'all':
                 return 1 if x == 'all' else -1
-            xa_min = age_groups.get(x, (100, 0))[0]
-            ya_min = age_groups.get(y, (100, 0))[0]
+            # compare minimum age for group to sort
+            xa_min = REPORTS_AGE_GROUPS.get(x, (100, 0))[0]
+            ya_min = REPORTS_AGE_GROUPS.get(y, (100, 0))[0]
             return 1 if xa_min > ya_min else -1
 
         reports = []
 
+        # loop on dict and transform to:
+        #   - dicts composed of {'name': x, 'data': y}
+        #   - data is an ordered array of dicts
         for age_group in sorted(reports_dict.keys(), cmp=cmp_rep):
             age_group_data = reports_dict.get(age_group)
             age_group_data.update({'name': age_group})
@@ -296,9 +255,48 @@ def detail_teacher_django(request, uid):
 
         return reports
 
+
+    # retriebe short ID
+    sid = request.GET.get('short', None)
+    if not sid:
+        sid = short_id_from(uid)
+
+    # build barcode (identifier on submissions) from UID param.
+    barcode = build_urlid_with(uid, sid)
+
+    # Retrieve teacher data from bamboo (1req)
+    teacher = bamboo_query(request.user.project,
+                           query={'barcode': barcode},
+                           first=True,
+                           is_registration=True)
+    teacher.update(detailed_id_dict(teacher))
+
+    # retrieve list of submissions from bamboo (1req)
+    submissions = bamboo_query(request.user.project,
+                               query={'teacher_barcode': barcode},
+                               select={'general_information_age': 1,
+                                        'general_information_sex': 1,
+                                        'learning_levels_numeracy_nothing': 1,
+                                        'learning_levels_reading_nothing': 1,
+                                        'school_junior_secondary': 1,
+                                        'school_primary': 1,
+                                        'school_senior_secondary': 1,
+                                        'schooling_status_grades': 1})
+
+    # initialize containers for reading report and numeracy report.
+    reading_dict = init_reports()
+    numeracy_dict = init_reports()
+
+    # loop on submissions to fill reading/num reports
+    for submission in submissions:
+        compute_report_for(reading_dict, submission)
+        compute_report_for(numeracy_dict, submission, is_numeracy=True)
+
+    # compute percentages for reading/num reports
     compute_percentages(reading_dict)
     compute_percentages(numeracy_dict)
 
+    # sort/transform reports for template
     reading_reports = sort_reports(reading_dict)
     numeracy_reports = sort_reports(numeracy_dict)
 
@@ -359,74 +357,3 @@ def form(request):
         })
 
     return render(request, 'form.html', context)
-
-
-def update_data(request):
-
-    ''' update full dataset in bamboo by receiving a POST JSON request
-        containing the uuid of the form. '''
-
-    if not request.method == 'POST':
-        return HttpResponse(u"POST request expected.", status=405)
-
-    # 1. parseJSON or die
-    try:
-        json_data = json.loads(request.raw_post_data)
-    except ValueError:
-        return HttpResponse(u"POST request is not valid JSON.", status=400)
-
-    # 2. retrieve uuid or _userform_id
-    #    match with expected ID or die
-    uid = json_data.get('formhub/uuid', None)
-    userform_id = json_data.get('_userform_id', None)
-
-    # we might be interested in going this way in the future
-    # but it's not implemented in FH yet.
-    if uid and False:
-        download_url = ('%(root)s/forms/%(uuid)s/data.csv' 
-                        % {'root': FORMHUB_URL, 'uuid': uid})
-    else:
-        # /!\ UNSAFE. separator (_) is a valid username char.
-        username, form_id = userform_id.split('_', 1)
-        download_url = ('%(root)s/%(user)s/forms/%(form_id)s/data.csv'
-                        % {'root': FORMHUB_URL, 'user': username, 
-                           'form_id': form_id})
-
-    # 3. download dataset from formhub or die
-    try:
-        filename = download_formhub(url=download_url, login=DEFAULT_LOGIN,
-                                    password=DEFAULT_PASSWORD, ext='.csv')
-    except:
-        return HttpResponse(u"Unable to download %(url)s" 
-                            % {'url': download_url},
-                            status=400)
-
-    # 4. upload to bamboo
-    try:
-        upload_req = requests.post('%(root)s/datasets' % {'root': BAMBOO_URL}, 
-                                   files={'dataset.csv': open(filename, 'rb')})
-        uploaded = True
-    except:
-        uploaded = False
-    finally:
-        if upload_req.status_code not in (200, 201, 202) or not uploaded:
-            return HttpResponse(u"Unable to upload data to bamboo.", 
-                                status_code=502)
-
-    # 5. retrieve dataset_id.
-    try:
-        json_response = json.loads(upload_req.text)
-    except ValueError:
-        return HttpResponse(u"Bamboo did not answer properly.", status=502)
-
-    dataset_id = json_response.get('id', None)
-
-    if not dataset_id:
-        return HttpResponse(u"Bamboo did not returned an ID.", status=502)
-
-    # 5. update dataset_id.
-    bamboo_dataset = Option.objects.get_or_create(key='bamboo_dataset')
-    bamboo_dataset.data = dataset_id
-    bamboo_dataset.save()
-
-    return HttpResponse(u"Sucessfuly updated data", status_code=202)
