@@ -141,7 +141,25 @@ def list_teachers(request):
 @project_required
 def detail_teacher(request, uid):
 
-    context = {'category': 'teachers'}
+    method = request.GET.get('method', 'django')
+
+    view = detail_teacher_django \
+           if method == 'django' else detail_teacher_bamboo
+    return view(request, uid)
+
+
+def detail_teacher_bamboo(request, uid):
+    ''' Report Card View leveraging bamboo aggregation '''
+    return HttpResponse(u"Not Implemented")
+
+
+def detail_teacher_django(request, uid):
+
+    ''' Report Card View processing data from submissions list/data only '''
+
+    context = {'category': 'teachers',
+               'schoolcat': '%s|%s' 
+               % (request.user.project.slug, 'school_names')}
 
     sid = request.GET.get('short', None)
     if not sid:
@@ -155,7 +173,115 @@ def detail_teacher(request, uid):
                            is_registration=True)
     teacher.update(detailed_id_dict(teacher))
 
-    context.update({'teacher': teacher})
+
+    age_groups = {
+        u"6-9": (6, 9),
+        u"10-11": (10, 11),
+        u"12-14": (12, 14),
+        u"15-17": (15, 17),
+        u"all": (18, 99),
+    }
+
+    reading_levels = {
+        'learning_levels_literacy_nothing': u"Nothing",
+        'learning_levels_literacy_letters': u"Letters",
+        'learning_levels_literacy_words': u"Words",
+        'learning_levels_literacy_paragraphs': u"Paragraphs",
+        'learning_levels_literacy_story': u"Story",
+    }
+
+    numeracy_levels = {
+        'learning_levels_numeracy_nothing': u"Nothing",
+        'learning_levels_numeracy_num_recognition_1_9': u"1 to 9",
+        'learning_levels_numeracy_num_recognition_10_99': u"10 to 99",
+        'learning_levels_numeracy_subtraction': u"Substractions",
+        'learning_levels_numeracy_division': u"Divisions",
+
+    }
+
+    def get_age_group(sub):
+        for key, age_range in age_groups.items():
+            if (sub.get(u'general_information_age', 0)
+             in range(age_range[0], age_range[1] + 1)):
+                return key
+        return u"all"
+
+
+    def init_reports():
+        reports = {}
+        for age_group in age_groups.keys():
+            reports[age_group] = {}
+            for sex in ('male', 'female', 'total'):
+                reports[age_group][sex] = {}
+                for level in reading_levels.keys() \
+                             + numeracy_levels.keys() + ['total']:
+                    reports[age_group][sex][level] = {'nb': 0, 'percent': 0}
+        return reports
+
+    def compute_report_for(reports, submission):
+
+        age_group = get_age_group(submission)
+        sex = submission.get('general_information_sex')
+        level = submission.get('learning_levels_reading_nothing')
+
+        #       AGE GRP    SEX     LEVEL
+        reports['all']['total']['total']['nb'] += 1
+        reports['all']['total'][level]['nb'] += 1
+
+        reports['all'][sex]['total']['nb'] += 1
+        reports['all'][sex][level]['nb'] += 1
+
+        reports[age_group][sex][level]['nb'] += 1
+        reports[age_group][sex]['total']['nb'] += 1
+        reports[age_group]['total']['total']['nb'] += 1
+
+    submissions = bamboo_query(request.user.project,
+                               query={'teacher_barcode': barcode},
+                               select={'general_information_age': 1,
+                                        'general_information_sex': 1,
+                                        'learning_levels_numeracy_nothing': 1,
+                                        'learning_levels_reading_nothing': 1,
+                                        'school_junior_secondary': 1,
+                                        'school_primary': 1,
+                                        'school_senior_secondary': 1,
+                                        'schooling_status_grades': 1})
+
+    reports_dict = init_reports()
+
+    for submission in submissions:
+        compute_report_for(reports_dict, submission)
+
+    def sort_reports(reports_dict):
+        def cmp_rep(x, y):
+            if x == y:
+                return 0
+            if x == 'all' or y == 'all':
+                return 1 if x == 'all' else -1
+            xa_min = age_groups.get(x, (100, 0))[0]
+            ya_min = age_groups.get(y, (100, 0))[0]
+            return 1 if xa_min > ya_min else -1
+
+        reports = []
+
+        for age_group in sorted(reports_dict.keys(), cmp=cmp_rep):
+            age_group_data = reports_dict.get(age_group)
+            age_group_data.update({'name': age_group})
+            age_group_sex = []
+            for sex in sorted(age_group_data.keys()):
+                if sex == 'name':
+                    continue
+                sex_data = age_group_data.get(sex)
+                sex_data.update({'name': sex})
+                age_group_sex.append(sex_data)
+            reports.append({'name': age_group,
+                            'data': age_group_sex})
+
+        return reports
+
+    reports = sort_reports(reports_dict)
+
+    context.update({'teacher': teacher,
+                    'reports': reports})
 
     return render(request, 'detail_teacher.html', context)
 
