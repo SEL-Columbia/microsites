@@ -46,3 +46,7 @@ table.reporttable * td:first-of-type {
     text-align: left;
     width: 8em;
 }
+
+table.reporttable tr.total {
+    border-top: 2px double black;
+}

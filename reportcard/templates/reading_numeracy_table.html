@@ -1,0 +1,27 @@
+{% load mstag %}
+<table class="table table-striped table-bordered table-condensed reporttable">
+    <thead>
+        <tr><th colspan="10">{{ teacher.school|KeyName:schoolcat|upper }}</th></tr>
+        <tr><th></th><th colspan="2">Story</th><th colspan="2">Paragraph</th><th colspan="2">Word</th><th colspan="2">Letters</th><th>Total</th></tr>
+        <tr><th class="agegroup">Age Group</th><th>#</th><th>%</th><th>#</th><th>%</th><th>#</th><th>%</th><th>#</th><th>%</th><th>#</th></tr>
+    </thead>
+    
+    {% for age_group in reports %}
+    <thead>
+        <tr><td colspan="10"></td></tr>
+        <tr><th colspan="10" class="agegroup">{% ifequal age_group.name 'all' %}All Age Groups{% else %}{{ age_group.name }}{% endifequal %}</th></tr>
+    </thead>
+    <tbody>
+        {% for sex in age_group.data %}
+        {% ifnotequal sex.name 'name' %}
+        <tr{% ifequal sex.name 'total' %} class="{% ifnotequal age_group.name 'all' %}sub{% endifnotequal %}total"{% endifequal %}><td>{{ sex.name|title }}</td>
+            <td>{{ sex.learning_levels_literacy_story.nb }}</td><td>{{ sex.learning_levels_literacy_story.percent|NAdefault|percent }}</td>
+            <td>{{ sex.learning_levels_literacy_paragraphs.nb }}</td><td>{{ sex.learning_levels_literacy_paragraphs.percent|NAdefault|percent }}</td>
+            <td>{{ sex.learning_levels_literacy_words.nb }}</td><td>{{ sex.learning_levels_literacy_words.percent|NAdefault|percent }}</td>
+            <td>{{ sex.learning_levels_literacy_letters.nb }}</td><td>{{ sex.learning_levels_literacy_letters.percent|NAdefault|percent }}</td>
+            <td>{{ sex.total.nb }}</td></tr>
+        {% endifnotequal %}
+        {% endfor %}
+    </tdody>
+    {% endfor %}
+</table>

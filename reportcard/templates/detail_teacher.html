@@ -8,30 +8,27 @@
 <h1>{{ teacher.tchr_name }}</h1>
 <p><a href="{% url teacher_card teacher.uid_ %}">Reprint Teacher's card</a></p>
 
-<table class="table table-striped table-bordered table-condensed reporttable">
-    <thead>
-        <tr><th colspan="10">{{ teacher.school|KeyName:schoolcat|upper }}</th></tr>
-        <tr><th></th><th colspan="2">Story</th><th colspan="2">Paragraph</th><th colspan="2">Word</th><th colspan="2">Letters</th><th>Total</th></tr>
-        <tr><th class="agegroup">Age Group</th><th>#</th><th>%</th><th>#</th><th>%</th><th>#</th><th>%</th><th>#</th><th>%</th><th>#</th></tr>
-    </thead>
-    
-    {% for age_group in reports %}
-    <thead>
-        <tr><td colspan="10"></td></tr>
-        <tr><th colspan="10" class="agegroup">{% ifequal age_group.name 'all' %}All Age Groups{% else %}{{ age_group.name }}{% endifequal %}</th></tr>
-    </thead>
-    <tbody>
-        {% for sex in age_group.data %}
-        {% ifnotequal sex.name 'name' %}
-        <tr{% ifequal sex.name 'total' %} class="subtotal"{% endifequal %}><td>{{ sex.name|title }}</td>
-            <td>{{ sex.learning_levels_literacy_story.nb }}</td><td>{{ sex.learning_levels_literacy_story.percent }}%</td>
-            <td>{{ sex.learning_levels_literacy_paragraphs.nb }}</td><td>{{ sex.learning_levels_literacy_paragraphs.percent }}%</td>
-            <td>{{ sex.learning_levels_literacy_words.nb }}</td><td>{{ sex.learning_levels_literacy_words.percent }}%</td>
-            <td>{{ sex.learning_levels_literacy_letters.nb }}</td><td>{{ sex.learning_levels_literacy_letters.percent }}%</td>
-            <td>{{ sex.total.nb }}</td></tr>
-        {% endifnotequal %}
-        {% endfor %}
-    </tdody>
-    {% endfor %}
-</table>
+<h2>Reading Capabilities</h2>
+{% include 'reading_numeracy_table.html' with reports=reading_reports %}
+
+<h2>Numeracy Capabilities</h2>
+{% include 'reading_numeracy_table.html' with reports=numeracy_reports %}
+
+<h2>Comments</h2>
+<p>
+    <br />
+    <br />
+    <br />
+    <br />
+</p>
+
+<h2>Recomendations</h2>
+<p>
+    <br />
+    <br />
+    <br />
+    <br />
+</p>
+
+
 {% endblock %}

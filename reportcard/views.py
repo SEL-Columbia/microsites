@@ -215,14 +215,15 @@ def detail_teacher_django(request, uid):
                 reports[age_group][sex] = {}
                 for level in reading_levels.keys() \
                              + numeracy_levels.keys() + ['total']:
-                    reports[age_group][sex][level] = {'nb': 0, 'percent': 0}
+                    reports[age_group][sex][level] = {'nb': 0, 'percent': None}
         return reports
 
-    def compute_report_for(reports, submission):
+    def compute_report_for(reports, submission, is_numeracy=False):
 
         age_group = get_age_group(submission)
         sex = submission.get('general_information_sex')
-        level = submission.get('learning_levels_reading_nothing')
+        level = submission.get('learning_levels_numeracy_nothing' if is_numeracy 
+                               else 'learning_levels_reading_nothing')
 
         #       AGE GRP    SEX     LEVEL
         reports['all']['total']['total']['nb'] += 1
@@ -232,8 +233,23 @@ def detail_teacher_django(request, uid):
         reports['all'][sex][level]['nb'] += 1
 
         reports[age_group][sex][level]['nb'] += 1
+        reports[age_group]['total'][level]['nb'] += 1
         reports[age_group][sex]['total']['nb'] += 1
+
         reports[age_group]['total']['total']['nb'] += 1
+
+    def compute_percentages(reports):
+
+        def pc(num, denum):
+            try:
+                return float(num['nb']) / float(denum['nb'])
+            except ZeroDivisionError:
+                return 0
+
+        for age_group, ago in reports.items():
+            for sex, so in ago.items():
+                for level, lo in so.items():
+                    reports[age_group][sex][level]['percent'] = pc(reports[age_group][sex][level], reports[age_group][sex]['total'])
 
     submissions = bamboo_query(request.user.project,
                                query={'teacher_barcode': barcode},
@@ -246,10 +262,12 @@ def detail_teacher_django(request, uid):
                                         'school_senior_secondary': 1,
                                         'schooling_status_grades': 1})
 
-    reports_dict = init_reports()
+    reading_dict = init_reports()
+    numeracy_dict = init_reports()
 
     for submission in submissions:
-        compute_report_for(reports_dict, submission)
+        compute_report_for(reading_dict, submission)
+        compute_report_for(numeracy_dict, submission, is_numeracy=True)
 
     def sort_reports(reports_dict):
         def cmp_rep(x, y):
@@ -278,10 +296,15 @@ def detail_teacher_django(request, uid):
 
         return reports
 
-    reports = sort_reports(reports_dict)
+    compute_percentages(reading_dict)
+    compute_percentages(numeracy_dict)
+
+    reading_reports = sort_reports(reading_dict)
+    numeracy_reports = sort_reports(numeracy_dict)
 
     context.update({'teacher': teacher,
-                    'reports': reports})
+                    'reading_reports': reading_reports,
+                    'numeracy_reports': numeracy_reports})
 
     return render(request, 'detail_teacher.html', context)
 

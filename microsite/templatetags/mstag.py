@@ -1,12 +1,15 @@
 # encoding=utf-8
 
+import locale
+
 from django import template
-# from django.template.defaultfilters import stringfilter
+from django.template.defaultfilters import stringfilter
 
 from microsite.utils import get_name_for
 from microsite.models import Project
 from microsite.barcode import get_ids_from_url
 
+locale.setlocale(locale.LC_ALL, '')
 register = template.Library()
 
 
@@ -51,3 +54,46 @@ def uid_from_urlid(url_id):
         return uid
     except:
         return url_id
+
+
+@register.filter(name='numberformat')
+@stringfilter
+def number_format(value, precision=2, french=True):
+    try:
+        format = '%d'
+        value = int(value)
+    except:
+        try:
+            format = '%.' + '%df' % precision
+            value = float(value)
+        except:
+            format = '%s'
+        else:
+            if value.is_integer():
+                format = '%d'
+                value = int(value)
+    try:
+        if french:
+            return strnum_french(locale.format(format, value, grouping=True))
+        return locale.format(format, value, grouping=True)
+    except Exception:
+        pass
+    return value
+
+
+def strnum_french(numstr):
+    if locale.getdefaultlocale()[0].__str__().startswith('fr'):
+        return numstr
+    else:
+        return numstr.replace(',', ' ').replace('.', ',')
+
+
+@register.filter(name='percent')
+@stringfilter
+def format_percent(value, precision=2, french=True):
+    if value == u'n/a':
+        return value
+    try:
+        return number_format(float(value) * 100, precision, french) + '%'
+    except:
+        return value
