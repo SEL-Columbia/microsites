@@ -66,3 +66,34 @@ IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
 # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
 
 # KEY_NAME_NAMESPACES = [('school_names', u"School Names"),]
+
+# THE FOLLOWING SECTION CAN BE USED TO SHARED ONE SETTINGS FILE
+# ACCROSS MULTIPLE PROJECTS. EX: WHEN HOSTING SEVERAL MICROSITES ON
+# THE SAME SERVER
+#
+# if os.environ['MICROSITE_DEFAULT_APP']:
+#     DEFAULT_APP = os.environ['MICROSITE_DEFAULT_APP']
+# else:
+#     DEFAULT_APP = 'reportcard'# 
+# if DEFAULT_APP == 'reportcard':
+#     SECRET_KEY = 'change this'
+#     INSTALLED_APPS_EXTRA = ['reportcard']
+#     DEFAULT_APP = 'reportcard'
+#     IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
+#     # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
+#     KEY_NAME_NAMESPACES = [('school_names', u"School Names"),
+#                            ('classes_taught', u"Classes taught")]# 
+# elif DEFAULT_APP == 'soillab':
+#     SECRET_KEY = 'change this'
+#     INSTALLED_APPS_EXTRA = ['reportcard']
+#     DEFAULT_APP = 'soillab'
+#     IDGEN_BASE_URI = u'http://soillab.modilabs.org'
+#     # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
+#     KEY_NAME_NAMESPACES = []
+# else:
+#     SECRET_KEY = 'change this'
+#     INSTALLED_APPS_EXTRA = ['reportcard']
+#     DEFAULT_APP = 'reportcard'
+#     IDGEN_BASE_URI = u'http://trkr.org'
+#     # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
+#     KEY_NAME_NAMESPACES = []

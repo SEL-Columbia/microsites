@@ -42,7 +42,9 @@ def setup_env(deployment_name):
     env.project_directory = os.path.join(env.home, env.project)
     env.code_src = os.path.join(env.project_directory, env.repo_name)
     env.wsgi_config_file = os.path.join(
-        env.project_directory, 'apache', 'environment.wsgi')
+        env.project_directory, 'apache', 'reportcard.wsgi')
+    env.wsgi_config_file = os.path.join(
+        env.project_directory, 'apache', 'soillab.wsgi')
     env.pip_requirements_file = os.path.join(env.code_src, 'requirements.pip')
 
 
