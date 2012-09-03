@@ -71,10 +71,8 @@ IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
 # ACCROSS MULTIPLE PROJECTS. EX: WHEN HOSTING SEVERAL MICROSITES ON
 # THE SAME SERVER
 #
-# if os.environ['MICROSITE_DEFAULT_APP']:
-#     DEFAULT_APP = os.environ['MICROSITE_DEFAULT_APP']
-# else:
-#     DEFAULT_APP = 'reportcard'# 
+# DEFAULT_APP = os.environ.get('MICROSITE_DEFAULT_APP', 'reportcard')
+#
 # if DEFAULT_APP == 'reportcard':
 #     SECRET_KEY = 'change this'
 #     INSTALLED_APPS_EXTRA = ['reportcard']
@@ -85,7 +83,7 @@ IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
 #                            ('classes_taught', u"Classes taught")]# 
 # elif DEFAULT_APP == 'soillab':
 #     SECRET_KEY = 'change this'
-#     INSTALLED_APPS_EXTRA = ['reportcard']
+#     INSTALLED_APPS_EXTRA = ['soillab']
 #     DEFAULT_APP = 'soillab'
 #     IDGEN_BASE_URI = u'http://soillab.modilabs.org'
 #     # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
