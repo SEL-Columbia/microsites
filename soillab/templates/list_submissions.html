@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block page_title %}List of submissions{% endblock %}
+
+{% block content %}
+<h1>List of submissions</h1>
+<table class="table table-striped table-bordered table-condensed">
+<thead>
+    <tr><th>Teacher</th><th>Age</th><th>Sex</th><th>Numeracy</th><th>Reading</th></tr>
+</thead>
+<tbody>
+{% for submission in submissions %}
+<tr><td><a href="{% url teacher submission.teacher_uid_ %}">{{ submission.teacher_sid_ }}</a></td><td>{{ submission.general_information_age }}</td><td>{{ submission.general_information_sex }}</td><td>{{ submission.learning_levels_numeracy_nothing }}</td><td>{{ submission.learning_levels_reading_nothing }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% include 'pagination.html' with paginator=submissions %}
+
+{% endblock %}

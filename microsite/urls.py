@@ -41,6 +41,9 @@ urlpatterns = patterns('',
 
     url(r'^idgen/(?P<nb_ids>[0-9]*)$', 'microsite.views.idgen', name='idgen'),
 
+    url(r'^submissions$', 'reportcard.views.list_submissions',
+        name='submissions'),
+
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
 )

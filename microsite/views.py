@@ -9,13 +9,16 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 from django.http import HttpResponse, Http404
 from django.contrib import messages
+from django.core.paginator import EmptyPage, PageNotAnInteger
 
 from microsite.utils import (dump_json, load_json,
                              import_csv_content_into_namespace)
+from microsite.decorators import project_required
 from microsite.models import Option,KeyNamePair
-from microsite.bamboo import getset_bamboo_dataset
-from microsite.barcode import b64_random_qrcode
+from microsite.bamboo import getset_bamboo_dataset, bamboo_query
+from microsite.barcode import b64_random_qrcode, detailed_id_dict
 from microsite.decorators import unconfigured_project_required
+from microsite.digg_paginator import FlynsarmyPaginator
 
 
 DEFAULT_IDS = 5
@@ -189,3 +192,28 @@ def login_greeter(request):
                'projects': Project.objects.all().order_by('name')}
 
     return login(request, template_name='login.html', extra_context=context)
+
+
+@project_required
+def list_submissions(request, id_prefix=u''):
+
+    context = {'category': 'submissions'}
+
+    submissions_list = bamboo_query(request.user.project)
+
+    for submission in submissions_list:
+        submission.update(detailed_id_dict(submission, prefix=id_prefix))
+
+    paginator = FlynsarmyPaginator(submissions_list, 10, adjacent_pages=2)
+
+    page = request.GET.get('page')
+    try:
+        submissions = paginator.page(page)
+    except PageNotAnInteger:
+        submissions = paginator.page(1)
+    except EmptyPage:
+        submissions = paginator.page(paginator.num_pages)
+
+    context.update({'submissions': submissions})
+
+    return render(request, 'list_submissions.html', context)
