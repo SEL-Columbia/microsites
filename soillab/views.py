@@ -1,6 +1,7 @@
 # encoding=utf-8
 
 from django.shortcuts import render
+from django.http import HttpResponse
 
 from microsite.views import DEFAULT_IDS
 from microsite.decorators import project_required
@@ -52,7 +53,9 @@ def form_splitter(request):
         3. Submits the resulting XForms to formhub. '''
 
     print(request.raw_post_data)
-    with open('/tmp/toto.json') as f:
+    with open('/tmp/toto.json', 'w') as f:
         f.write(request.raw_post_data)
     
     from pprint import pprint as pp ; pp(request.raw_post_data)
+
+    return HttpResponse('OK')
