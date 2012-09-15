@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block pageclass %}nomargin{% endblock %}
+
+{% block page_title %}SoilDoc Samples{% endblock %}
+
+{% block jquery_load %}sample_list_init();{% endblock %}
+
+{% block topmenu %}
+<div class='header'>Samples</div>
+<div class='link'><a href="/search"><i class="icon-search icon-white"></i> SEARCH</a></div>
+{% endblock %}
+
+{% block content %}
+<ul id="mainlist">
+    <li><a href="/toto"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
+    <li><a href="/titi"><strong>F. sample</strong>, Moussa Diakité</a></li>
+    <li><a href="/tata"><strong>B. sample</strong>, Sokona Diawara</a></li>
+                    <li><a href="#"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
+    <li><a href="#"><strong>F. sample</strong>, Moussa Diakité</a></li>
+    <li><a href="#"><strong>B. sample</strong>, Sokona Diawara</a></li>
+                    <li><a href="#"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
+    <li><a href="#"><strong>F. sample</strong>, Moussa Diakité</a></li>
+    <li><a href="#"><strong>B. sample</strong>, Sokona Diawara</a></li>
+                    <li><a href="#"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
+    <li><a href="#"><strong>F. sample</strong>, Moussa Diakité</a></li>
+    <li><a href="#"><strong>B. sample</strong>, Sokona Diawara</a></li>
+</ul>
+{% endblock %}

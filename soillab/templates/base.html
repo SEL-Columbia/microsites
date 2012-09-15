@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block page_title %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
+
+    <meta http-equiv="cleartype" content="on">
+
+    <link rel="icon" type="image/png" href="{{ STATIC_URL }}favicon.png" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" type="text/css" media="screen,projection" />
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/microsite.css" type="text/css" media="screen,projection" />   
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/soillab.css" type="text/css" media="screen,projection" />
+
+    <script src="{{ STATIC_URL }}bootstrap/js/jquery-1.7.2.min.js"></script>
+    <script src="{{ STATIC_URL }}soillab.js"></script>
+
+</head>
+<body> 
+    <div id="page" class="{% block pageclass %}regular{% endblock %}">
+
+        <div id="header" class='{% block headerclass %}regular{% endblock %}'>
+            <h1>SoilDoc</h1>
+            <h2>Powerful, portable soild sampling for agricultural extension agents</h2>
+        </div>
+        
+        <div id="topmenu">{% block topmenu %}{% endblock %}</div>
+        
+        <div id="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+        
+        <div id="footer">{% block footer %}<p>&copy; 2012 SoilDoc</p>{% endblock %}</div>  
+    </div>
+
+<script type="text/Javascript">
+$(document).ready(function(){
+    {% block jquery_load %}{% endblock %}
+});
+</script>
+</body>
+</html>
