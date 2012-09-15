@@ -1,7 +1,42 @@
 # encoding=utf-8
 
+import os
+import requests
+import zipfile
+import tempfile
+
 from microsite.utils import get_option
 
+FORMHUB_UPLOAD_TIMEOUT = 60
+
+
+class ErrorUploadingDataToFormhub(IOError):
+    pass
+
+
+class ErrorMultipleUploadingDataToFormhub(IOError):
+    
+    def __init__(self, *args, **kwargs):
+        super(ErrorMultipleUploadingDataToFormhub, self).__init__(*args, **kwargs)
+        self.timeouts = []
+        self.failures = []
+        self.denies = []
+
+    def is_filled(self):
+        return bool(self.count())
+
+    def count(self):
+        return len(self.timeouts) + len(self.failures) + len(self.denies)
+
+    @property
+    def message(self):
+        return (u"%(total)d submissions failed:\n%(nb_timeouts)d time outs.\n"
+                u"%(nb_failures)d general failures.\n"
+                u"%(nb_denies)d submissions rejected." 
+                % {'total': self.count(),
+                   'nb_timeouts': len(self.timeouts),
+                   'nb_failures': len(self.failures),
+                   'nb_denies': len(self.denies)})
 
 def get_formhub_url(project):
     return get_option(project, 'formhub_uri')
@@ -23,15 +58,21 @@ def get_formhub_ids_form(project):
     return get_option(project, 'formhub_ids_form')
 
 
+def get_formhub_user_url(project, is_registration=False):
+    user = (get_formhub_ids_user(project) if is_registration 
+                                         else get_formhub_user(project))
+    data = {'base': get_formhub_url(project),
+            'user': user}
+    return u'%(base)s/%(user)s' % data
+
+
 def get_formhub_form_url(project, is_registration=False):
-  
     form = (get_formhub_ids_form(project) if is_registration 
                                          else get_formhub_form(project))
-    data = {'base': get_formhub_url(project),
-            'user': get_formhub_user(project),
+    data = {'user_url': get_formhub_user_url(project, is_registration),
             'form': form}
+    return u'%(user_url)s/forms/%(form)s' % data
 
-    return u'%(base)s/%(user)s/forms/%(form)s' % data
 
 def get_formhub_form_api_url(project, is_registration=False):
     data = {'form_url': get_formhub_form_url(project, is_registration)}
@@ -101,3 +142,93 @@ def get_formhub_form_formxls_url(project, is_registration=False):
 def get_formhub_form_formjson_url(project, is_registration=False):
     data = {'form_url': get_formhub_form_url(project, is_registration)}
     return u'%(form_url)s/form.json' % data
+
+
+def get_formhub_submission_url(project, is_registration=False):
+    data = {'user_url': get_formhub_user_url(project, is_registration)}
+    return u'%(user_url)s/submission' % data
+
+
+def get_formhub_bulk_submission_url(project, is_registration=False):
+    data = {'user_url': get_formhub_user_url(project, is_registration)}
+    return u'%(user_url)s/bulk-submission' % data
+
+
+def submit_xml_forms_formhub(project, xforms=[], as_bulk=False):
+
+    # allow single form parameter
+    if not isinstance(xforms, list):
+        xforms = [xforms]
+
+    # bulk allows to send multiple forms at once in a ZIP archive
+    if as_bulk:
+
+        # filename for the zip file
+        ziph, zip_file = tempfile.mkstemp(suffix='.zip')
+
+        # create the ZIP file containing the forms
+        with zipfile.ZipFile(zip_file, 'w') as zfile:
+            for form_xml in xforms:
+                if not form_xml:
+                    continue
+
+                # create a temporary file for each form
+                fileh, form_file = tempfile.mkstemp(suffix='.xml')
+                os.write(fileh, form_xml)
+                os.close(fileh)
+                # add the temp xml file to the zip file
+                zfile.write(form_file)
+                try:
+                    os.remove(form_file)
+                except:
+                    pass
+
+        # upload the zip file
+        try:
+            req = requests.post(get_formhub_bulk_submission_url(),
+                                    files={'zip_submission_file': 
+                                           (zip_file, 
+                                            open(zip_file))},
+                                           timeout=FORMHUB_UPLOAD_TIMEOUT)
+        except requests.exceptions.Timeout:
+            raise ErrorUploadingDataToFormhub(u"Upload timed out after "
+                                              u"%ds." % FORMHUB_UPLOAD_TIMEOUT)
+        except Exception as e:
+            raise ErrorUploadingDataToFormhub(u"Unable to send: %r" % e.message)
+
+        if not req.status_code in (200, 201, 202):
+            raise ErrorUploadingDataToFormhub(u'Unable to submit ZIP: %s' 
+                                              % req.text)
+        return True
+
+
+
+    # not bulk, submissions one by one
+    exception = ErrorMultipleUploadingDataToFormhub()
+
+    formhub_submission_url = get_formhub_submission_url()
+    for form_xml in xforms:
+        if not form_xml:
+            continue
+        try:
+            req = requests.post(formhub_submission_url,
+                                files={'xml_submission_file': 
+                                       ('form.xml', form_xml)})
+        except requests.exceptions.Timeout as e:
+            exception.timeouts.append(e)
+            continue
+        except Exception as e:
+            exception.timeouts.append(e)
+            continue
+
+        try:
+            assert(req.status_code in (200, 201, 202), u"Received unexpected "
+                                                       u"HTTP return code %d." 
+                                                       % req.status_code)
+        except AssertionError:
+            exception.timeouts.append(e)
+    
+    if exception.is_filled():
+        raise exception
+
+    return True
