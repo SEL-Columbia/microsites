@@ -11,7 +11,9 @@ FORMHUB_UPLOAD_TIMEOUT = 60
 
 
 class ErrorUploadingDataToFormhub(IOError):
-    pass
+
+    def details(self, kind=None):
+        return ''
 
 
 class ErrorMultipleUploadingDataToFormhub(IOError):
