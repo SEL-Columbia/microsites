@@ -133,7 +133,7 @@ def form_splitter(request, project_slug='soildoc'):
         f.write('--\n--'.join(xforms))
 
     try:
-        submit_xml_forms_formhub(project, xforms, as_bulk=False)
+        submit_xml_forms_formhub(project, xforms, as_bulk=True)
     except (ErrorUploadingDataToFormhub, 
             ErrorMultipleUploadingDataToFormhub) as e:
         with open('/tmp/toto.txt', 'w+') as f:
