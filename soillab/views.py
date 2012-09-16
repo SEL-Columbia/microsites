@@ -131,7 +131,7 @@ def form_splitter(request, project_slug='soildoc'):
     xforms = [json2xform(form.copy()) for form in forms]
 
     try:
-        submit_xml_forms_formhub(project, xforms, as_bulk=True)
+        submit_xml_forms_formhub(project, xforms, as_bulk=False)
     except (ErrorUploadingDataToFormhub, 
             ErrorMultipleUploadingDataToFormhub) as e:
         with open('/tmp/toto.txt', 'w') as f:
