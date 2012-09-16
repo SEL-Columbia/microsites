@@ -13,17 +13,9 @@
 
 {% block content %}
 <ul id="mainlist">
-    <li><a href="/toto"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
-    <li><a href="/titi"><strong>F. sample</strong>, Moussa Diakité</a></li>
-    <li><a href="/tata"><strong>B. sample</strong>, Sokona Diawara</a></li>
-                    <li><a href="#"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
-    <li><a href="#"><strong>F. sample</strong>, Moussa Diakité</a></li>
-    <li><a href="#"><strong>B. sample</strong>, Sokona Diawara</a></li>
-                    <li><a href="#"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
-    <li><a href="#"><strong>F. sample</strong>, Moussa Diakité</a></li>
-    <li><a href="#"><strong>B. sample</strong>, Sokona Diawara</a></li>
-                    <li><a href="#"><strong>B. sample</strong>, Nikolas Atchikpa</a></li>
-    <li><a href="#"><strong>F. sample</strong>, Moussa Diakité</a></li>
-    <li><a href="#"><strong>B. sample</strong>, Sokona Diawara</a></li>
+    {% for sample in samples %}
+    <li><a href="{% url sample sample.sample_id_sample_barcode_id %}"><strong>{{ sample.single_letter|upper }}. sample</strong>, {{ sample.sample_id_sample_barcode_id }}</a></li>
+    {% endfor %}
 </ul>
+{% include 'pagination.html' with paginator=samples %}
 {% endblock %}

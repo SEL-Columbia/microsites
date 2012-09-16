@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from dict2xml import dict2xml
+from django.core.paginator import EmptyPage, PageNotAnInteger
+from microsite.digg_paginator import FlynsarmyPaginator
 
 from microsite.views import DEFAULT_IDS
 from microsite.models import Project
@@ -16,6 +18,8 @@ from microsite.barcode import b64_qrcode
 from microsite.formhub import (submit_xml_forms_formhub,
                                ErrorUploadingDataToFormhub,
                                ErrorMultipleUploadingDataToFormhub)
+from microsite.bamboo import (bamboo_query)
+
 from soillab.spid_ssid import generate_ssids
 
 
@@ -23,12 +27,39 @@ from soillab.spid_ssid import generate_ssids
 def samples_list(request, search_string=None):
     context = {}
 
+    submissions_list = bamboo_query(request.user.project)
+    for sub in submissions_list:
+        if sub.get('sample_id_sample_barcode_id', 'n/a') == u'n/a':
+            submissions_list.remove(sub)
+
+    from pprint import pprint as pp ; pp(submissions_list)
+
+    paginator = FlynsarmyPaginator(submissions_list, 20, adjacent_pages=2)
+
+    page = request.GET.get('page')
+    try:
+        submissions = paginator.page(page)
+    except PageNotAnInteger:
+        submissions = paginator.page(1)
+    except EmptyPage:
+        submissions = paginator.page(paginator.num_pages)
+
+    context.update({'samples': submissions})
+
     return render(request, 'samples_list.html', context)
 
 
 @project_required
 def sample_detail(request, sample_id):
     context = {}
+
+    sample = bamboo_query(request.user.project,
+                          query={'sample_id_sample_barcode_id': sample_id},
+                          first=True)
+
+    from pprint import pprint as pp ; pp(sample)
+
+    context.update({'sample': sample})
     
     return render(request, 'sample_detail.html', context)
 

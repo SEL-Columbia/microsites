@@ -47,6 +47,10 @@ html, body {
     font-size: 150%;
 }
 
+#topmenu .header .sep {
+    color: #85bb6f;
+}
+
 #topmenu .link {
     position: absolute;
     right: 0;
@@ -105,4 +109,8 @@ ul#mainlist {
 
 #mainlist li:hover {
     background-color: #e9eae4;
+}
+
+#content h3 {
+    color: #225918;
 }
