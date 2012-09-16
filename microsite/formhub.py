@@ -215,6 +215,7 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False):
         if not req.status_code in (200, 201, 202):
             raise ErrorUploadingDataToFormhub(u'Unable to submit ZIP: %s' 
                                               % req.text)
+        print(req.text)
         return True
 
 
