@@ -4,7 +4,7 @@ import json
 import re
 
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from dict2xml import dict2xml
@@ -27,7 +27,14 @@ from soillab.spid_ssid import generate_ssids
 def samples_list(request, search_string=None):
     context = {}
 
+    lookup = request.GET.get('lookup', None)
+
+    # for now, look up will just forward to detail view
+    if lookup:
+        return sample_detail(request, lookup.strip())
+
     submissions_list = bamboo_query(request.user.project)
+
     for sub in submissions_list:
         if sub.get('sample_id_sample_barcode_id', 'n/a') == u'n/a':
             submissions_list.remove(sub)
@@ -44,7 +51,8 @@ def samples_list(request, search_string=None):
     except EmptyPage:
         submissions = paginator.page(paginator.num_pages)
 
-    context.update({'samples': submissions})
+    context.update({'samples': submissions,
+                    'lookup': lookup})
 
     return render(request, 'samples_list.html', context)
 
@@ -53,11 +61,15 @@ def samples_list(request, search_string=None):
 def sample_detail(request, sample_id):
     context = {}
 
-    sample = bamboo_query(request.user.project,
-                          query={'sample_id_sample_barcode_id': sample_id},
-                          first=True)
+    try:
+        sample = bamboo_query(request.user.project,
+                              query={'sample_id_sample_barcode_id': sample_id},
+                              first=True)
+    except:
+        raise Http404(u"Requested Sample (%(sample)s) does not exist." 
+                      % {'sample': sample_id})
 
-    from pprint import pprint as pp ; pp(sample)
+    # from pprint import pprint as pp ; pp(sample)
 
     context.update({'sample': sample})
     

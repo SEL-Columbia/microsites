@@ -45,6 +45,9 @@
 
 <script type="text/Javascript">
 $(document).ready(function(){
+    $("#header").click(function () {
+        window.location = '{% url home %}';
+    });
     {% block jquery_load %}{% endblock %}
 });
 </script>

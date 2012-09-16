@@ -8,10 +8,16 @@
 
 {% block topmenu %}
 <div class='header'>Samples</div>
-<div class='link'><a href="/search"><i class="icon-search icon-white"></i> SEARCH</a></div>
+<div class='link'><a href="#"><i class="icon-search icon-white"></i> GO TO</a></div>
 {% endblock %}
 
 {% block content %}
+<div id="search"{% if not lookup %} class="hide"{% endif %}>
+<form class="form-search" method="GET" action="{% url samples_list %}">
+<input type="text" class="input-large search-query" placeholder="Sample ID…" name="lookup" {% if lookup %}value="{{ lookup }}"{% endif %}>
+<button type="submit" class="btn">Go To</button>
+</form>
+</div>
 <ul id="mainlist">
     {% for sample in samples %}
     <li><a href="{% url sample sample.sample_id_sample_barcode_id %}"><strong>{{ sample.single_letter|upper }}. sample</strong>, {{ sample.sample_id_sample_barcode_id }}</a></li>
