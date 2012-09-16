@@ -17,10 +17,17 @@ class ErrorUploadingDataToFormhub(IOError):
 class ErrorMultipleUploadingDataToFormhub(IOError):
     
     def __init__(self, *args, **kwargs):
-        super(ErrorMultipleUploadingDataToFormhub, self).__init__(*args, **kwargs)
+        super(ErrorMultipleUploadingDataToFormhub, self).__init__(*args, 
+                                                                  **kwargs)
         self.timeouts = []
         self.failures = []
         self.denies = []
+
+    def __str__(self):
+        return self.message
+
+    def __repr__(self):
+        return self.message
 
     def is_filled(self):
         return bool(self.count())
@@ -30,13 +37,22 @@ class ErrorMultipleUploadingDataToFormhub(IOError):
 
     @property
     def message(self):
-        return (u"%(total)d submissions failed:\n%(nb_timeouts)d time outs.\n"
+        return (u"Error while submitting multiple forms. "
+                u"%(total)d submissions failed:\n%(nb_timeouts)d time outs.\n"
                 u"%(nb_failures)d general failures.\n"
                 u"%(nb_denies)d submissions rejected." 
                 % {'total': self.count(),
                    'nb_timeouts': len(self.timeouts),
                    'nb_failures': len(self.failures),
                    'nb_denies': len(self.denies)})
+
+    def details(self, kind=None):
+        if not kind is None and kind in ('timeouts', 'failures', 'denies'):
+            exceptions = self.get(kind)
+        else:
+            exceptions = self.timeouts + self.failures + self.denies
+        return '\n'.join(['%r' % e for e in exceptions])
+
 
 def get_formhub_url(project):
     return get_option(project, 'formhub_uri')
@@ -185,7 +201,7 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False):
 
         # upload the zip file
         try:
-            req = requests.post(get_formhub_bulk_submission_url(),
+            req = requests.post(get_formhub_bulk_submission_url(project),
                                     files={'zip_submission_file': 
                                            (zip_file, 
                                             open(zip_file))},
@@ -206,27 +222,29 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False):
     # not bulk, submissions one by one
     exception = ErrorMultipleUploadingDataToFormhub()
 
-    formhub_submission_url = get_formhub_submission_url()
+    formhub_submission_url = get_formhub_submission_url(project)
     for form_xml in xforms:
         if not form_xml:
             continue
         try:
             req = requests.post(formhub_submission_url,
                                 files={'xml_submission_file': 
-                                       ('form.xml', form_xml)})
+                                       ('form.xml', form_xml)},
+                                timeout=FORMHUB_UPLOAD_TIMEOUT)
         except requests.exceptions.Timeout as e:
             exception.timeouts.append(e)
             continue
         except Exception as e:
-            exception.timeouts.append(e)
+            exception.failures.append(e)
             continue
 
         try:
-            assert(req.status_code in (200, 201, 202), u"Received unexpected "
-                                                       u"HTTP return code %d." 
-                                                       % req.status_code)
-        except AssertionError:
-            exception.timeouts.append(e)
+            assert req.status_code in (200, 201, 202), (u"Received unexpected "
+                                                        u"HTTP return code %d." 
+                                                        % req.status_code)
+        except AssertionError as e:
+            print(req.text)
+            exception.denies.append(e)
     
     if exception.is_filled():
         raise exception

@@ -2,6 +2,8 @@
 
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 from microsite.views import DEFAULT_IDS
 from microsite.decorators import project_required
@@ -45,6 +47,8 @@ def idgen(request, nb_ids=DEFAULT_IDS):
     return render(request, 'idgen.html', context)
 
 
+@require_POST
+@csrf_exempt
 def form_splitter(request):
     ''' Master XForm to Sub XFrom
 
