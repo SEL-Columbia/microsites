@@ -78,14 +78,17 @@ def form_splitter(request, project_slug='soildoc'):
     # map field suffixes with IDs in holder
     indexes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     # initialize holder for each form]
-    forms = [{} for x in indexes]
+    forms = [{'single_letter': l} for l in indexes]
 
     for field, value in jsform.iteritems():
         # if fields ends in a-h, only add it to the specified form
         match = re.match(r'.*_([a-h])$', field)
-        if match:
-            # retrieve suffix, form and build target field (without suffix)
+        try:
             target_suffix = match.groups()[0]
+        except:
+            target_suffix = ''
+        if match and target_suffix in indexes:
+            # retrieve suffix, form and build target field (without suffix)
             form = forms[indexes.index(target_suffix)]
             target_field = field.rsplit('_%s' % target_suffix, 1)[0]
 
@@ -126,7 +129,7 @@ def form_splitter(request, project_slug='soildoc'):
         
         return xml_head + dict2xml(jsform) + xml_tail
 
-    xforms = [json2xform(form.copy()) for form in forms]
+    xforms = [json2xform(forms[indexes.index(i)].copy()) for i in indexes]
     with open('/tmp/toto.txt', 'w') as f:
         f.write('xforms\n')
         f.write('--\n--'.join(xforms))
