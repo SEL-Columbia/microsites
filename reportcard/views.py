@@ -35,7 +35,8 @@ def home(request):
     try:
         nb_submissions = int(count_submissions(request.user.project,
                                            u'general_information_age'))
-    except ErrorRetrievingBambooData:
+    except ErrorRetrievingBambooData as e:
+        print(e)
         nb_submissions = None
 
     # total number of registered teachers
@@ -146,7 +147,31 @@ def detail_teacher(request, uid):
 
 def detail_teacher_bamboo(request, uid):
     ''' Report Card View leveraging bamboo aggregation '''
-    return HttpResponse(u"Not Implemented")
+
+    context = {'category': 'teachers',
+               'schoolcat': '%s|%s' 
+               % (request.user.project.slug, 'school_names')}
+
+    # retrieve short ID
+    sid = request.GET.get('short', None)
+    if not sid:
+        sid = short_id_from(uid)
+
+    # build barcode (identifier on submissions) from UID param.
+    barcode = build_urlid_with(uid, sid)
+
+    # Retrieve teacher data from bamboo (1req)
+    teacher = bamboo_query(request.user.project,
+                           query={'barcode': barcode},
+                           first=True,
+                           is_registration=True)
+
+
+    context.update({'teacher': teacher,})
+
+    teacher.update(detailed_id_dict(teacher))
+
+    return render(request, 'detail_teacher_bamboo.html', context)
 
 
 def detail_teacher_django(request, uid):
@@ -256,7 +281,7 @@ def detail_teacher_django(request, uid):
         return reports
 
 
-    # retriebe short ID
+    # retrieve short ID
     sid = request.GET.get('short', None)
     if not sid:
         sid = short_id_from(uid)
