@@ -34,7 +34,13 @@
         </div>
         
         <div id="topmenu">{% block topmenu %}{% endblock %}</div>
-        
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert {% if message.tags %} alert-{{ message.tags }}{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
         <div id="content">
             {% block content %}
             {% endblock %}
