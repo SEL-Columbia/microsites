@@ -134,8 +134,16 @@ def form_splitter(request, project_slug='soildoc'):
         submit_xml_forms_formhub(project, xforms, as_bulk=True)
     except (ErrorUploadingDataToFormhub, 
             ErrorMultipleUploadingDataToFormhub) as e:
+        with open('/tmp/toto.txt', 'w') as f:
+            f.write(u"%(intro)s\n%(detail)s" % {'intro': e, 
+                                                'detail': e.details()})
         return HttpResponse(u"%(intro)s\n%(detail)s" 
                             % {'intro': e,
                                'detail': e.details()}, status=502)
-
+    except Exception as e:
+        with open('/tmp/toto.txt', 'w') as f:
+            f.write(str(e))
+        
+    with open('/tmp/toto.txt', 'w') as f:
+        f.write('success')
     return HttpResponse('OK', status=201)
