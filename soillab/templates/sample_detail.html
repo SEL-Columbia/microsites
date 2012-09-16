@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block pageclass %}regular{% endblock %}
+
+{% block page_title %}Sample {{ sample.single_letter|upper }} - SoilDoc{% endblock %}
+
+{% block jquery_load %}{% endblock %}
+
+{% block topmenu %}
+<div class='header'>Sample {{ sample.single_letter|upper }} <span class='sep'>/</span> {{ sample.sample_id_sample_barcode_id }}</div>
+{% endblock %}
+
+{% block content %}
+
+<h3>Infos</h3>
+<p>meta-data here</p>
+
+<h3>Results</h3>
+<p>Results table here</p>
+
+<h3>Recommendations</p>
+<p>reco text here</p>
+
+<h3>Raw Data</h3>
+<table class="table table-striped">
+<tr><th>Nitrate</th><td>{{ sample.nitrate_group_nitrate }}</td></tr>
+<tr><th>Sulfur vial extract</th><td>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}</td></tr>
+</table>
+{% endblock %}
