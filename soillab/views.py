@@ -114,11 +114,9 @@ def form_splitter(request, project_slug='soildoc'):
     # we now have a list of json forms each containing their data.
     def json2xform(jsform):
         # changing the form_id to XXX_single
-        xml_head = (u"<?xml version='1.0' ?>"
-               u"<%(form_id)s id='%(form_id)s'>"
-               # u"<formhub><uuid>%(form_uuid)s</uuid></formhub>" 
-               % {'form_id': u'%s_single' % jsform.get(u'_xform_id_string')})
-        xml_tail = u"</%(form_id)s>"
+        dd = {'form_id': u'%s_single' % jsform.get(u'_xform_id_string')}
+        xml_head = u"<?xml version='1.0' ?><%(form_id)s id='%(form_id)s'>" % dd
+        xml_tail = u"</%(form_id)s>" % dd
 
         for field in jsform.keys():
             # treat field starting with underscore are internal ones.
@@ -130,10 +128,12 @@ def form_splitter(request, project_slug='soildoc'):
 
     xforms = [json2xform(form.copy()) for form in forms]
     with open('/tmp/toto.txt', 'w') as f:
+        f.write('xforms\n')
         f.write('--\n--'.join(xforms))
+        f.write('end\n')
 
     try:
-        submit_xml_forms_formhub(project, xforms, as_bulk=True)
+        submit_xml_forms_formhub(project, xforms, as_bulk=False)
     except (ErrorUploadingDataToFormhub, 
             ErrorMultipleUploadingDataToFormhub) as e:
         with open('/tmp/toto.txt', 'w+') as f:
