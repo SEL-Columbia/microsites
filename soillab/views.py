@@ -129,6 +129,7 @@ def form_splitter(request, project_slug='soildoc'):
         return xml_head + dict2xml(jsform) + xml_tail
 
     xforms = [json2xform(form.copy()) for form in forms]
+    print('--\n--'.join(xforms))
 
     try:
         submit_xml_forms_formhub(project, xforms, as_bulk=False)
