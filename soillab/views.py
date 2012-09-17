@@ -121,12 +121,17 @@ def form_splitter(request, project_slug='soildoc'):
     # name of a field which if None marks the form as empty
     # we don't submit empty forms to formhub.
     # must be a suffixed field!
-    EMPTY_VALUES = (None, u'n/a', u'')
+    AVAIL_SUFFIXES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     empty_trigger = 'sample_barcode_id'
-    empty_forms = []
 
     # map field suffixes with IDs in holder
-    indexes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    # we exclude forms with no data on trigger field so it won't be process
+    # nor sent to formhub
+    indexes = [l for l in AVAIL_SUFFIXES 
+                 if json.get(u'%(field)s_%(suffix)s'
+                             % {'field': empty_trigger,
+                                'suffix': l}, None) in jsform]
+
     # initialize holder for each form]
     forms = [{'single_letter': l} for l in indexes]
 
@@ -145,15 +150,10 @@ def form_splitter(request, project_slug='soildoc'):
             # handle group field differently (parent holding the fields)
             if '/' in field:
                 group, real_field = target_field.split('/', 1)
-                # check for emptyness
-                if real_field == empty_trigger and value in EMPTY_VALUES:
-                    empty_forms.append(target_suffix)
                 if not group in form:
                     form[group] = {}
                 form[group].update({real_field: value})
             else:
-                if field == empty_trigger and value in EMPTY_VALUES:
-                    empty_forms.append(target_suffix)
                 form.update({field: value})
         # otherwise, it's a common field, add to all
         else:
@@ -184,9 +184,7 @@ def form_splitter(request, project_slug='soildoc'):
         
         return xml_head + dict2xml(jsform) + xml_tail
 
-    xforms = [json2xform(forms[indexes.index(i)].copy()) 
-              for i in indexes 
-              if not i in empty_forms]
+    xforms = [json2xform(forms[indexes.index(i)].copy()) for i in indexes]
 
     try:
         submit_xml_forms_formhub(project, xforms, as_bulk=False)
