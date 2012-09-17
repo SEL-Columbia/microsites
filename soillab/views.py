@@ -117,6 +117,19 @@ def form_splitter(request, project_slug='soildoc'):
     except:
         return HttpResponse(u"Unable to parse JSON data", status=400)
 
+    def field_splitter(field):
+        match = re.match(r'.*_([a-h])$', field)
+        if match:
+            try:
+                suffix = match.groups()[0]
+            except:
+                suffix = None
+            if suffix:
+                field = field.rsplit('_%s' % suffix, 1)[0]
+            return (field, suffix)
+        else:
+            return (field, None)
+
     # name of a field which if None marks the form as empty
     # we don't submit empty forms to formhub.
     # must be a suffixed field!
@@ -136,22 +149,19 @@ def form_splitter(request, project_slug='soildoc'):
 
     for field, value in jsform.iteritems():
         # if fields ends in a-h, only add it to the specified form
-        match = re.match(r'.*_([a-h])$', field)
-        try:
-            target_suffix = match.groups()[0]
-        except:
-            target_suffix = ''
-        if match and target_suffix in indexes:
+        target_field, target_suffix = field_splitter(field)
+
+        if target_suffix in indexes:
             # retrieve suffix, form and build target field (without suffix)
             form = forms[indexes.index(target_suffix)]
-            target_field = field.rsplit('_%s' % target_suffix, 1)[0]
 
             # handle group field differently (parent holding the fields)
             if '/' in field:
                 group, real_field = target_field.split('/', 1)
-                if not group in form:
-                    form[group] = {}
-                form[group].update({real_field: value})
+                real_group, group_suffix = field_splitter(group)
+                if not real_group in form:
+                    form[real_group] = {}
+                form[real_group].update({real_field: value})
             else:
                 form.update({field: value})
         # otherwise, it's a common field, add to all
@@ -160,11 +170,12 @@ def form_splitter(request, project_slug='soildoc'):
                 # handle group field differently (parent holding the fields)
                 if '/' in field:
                     group, real_field = field.split('/', 1)
-                    if not group in form:
-                        form[group] = {}
-                    form[group].update({real_field: value})
+                    real_group, group_suffix = field_splitter(group)
+                    if not real_group in form:
+                        form[real_group] = {}
+                    form[real_group].update({real_field: value})
                 else:
-                    form.update({field: value})
+                    form.update({target_field: value})
 
     del(jsform)
 
