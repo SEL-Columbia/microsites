@@ -187,3 +187,11 @@ dl dd {
     margin:2px 0;
     padding:5px 0;
 }
+
+#raw_data {
+    display: none;
+}
+
+.raw_data_btn {
+    width: 100%;
+}

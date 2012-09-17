@@ -4,7 +4,11 @@
 
 {% block page_title %}Sample {{ sample.single_letter|upper }} - SoilDoc{% endblock %}
 
-{% block jquery_load %}{% endblock %}
+{% block jquery_load %}
+$(".raw_data_btn").click(function () {
+   $("#raw_data").slideToggle(); 
+});
+{% endblock %}
 
 {% block topmenu %}
 <div class='header'>Sample {{ sample.single_letter|upper }} <span class='sep'>/</span> {{ sample.sample_id_sample_barcode_id }}</div>
@@ -54,10 +58,14 @@ s_ppm</td><td class='result_indic'><span class="badge badge-warning">LOW</span><
         <p>Rince with folic acid every morning at 5am.</p></li>
 </ul>
 
+<button class="btn btn-large btn-block raw_data_btn" type="button">Toggle Raw Input Data</button>
+
+<div id="raw_data">
 <h3>Raw Input Data</h3>
-<table class="table table-striped" id="raw_data">
+<table class="table table-striped">
 {% for field_name, field_value in sample.items %}
 <tr><th class="word-wrap">{{ field_name }}</th><td>{{ field_value }}</td></tr>
 {% endfor %}
 </table>
+</div>
 {% endblock %}
