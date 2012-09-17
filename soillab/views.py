@@ -34,12 +34,9 @@ def samples_list(request, search_string=None):
         return sample_detail(request, lookup.strip())
 
     submissions_list = bamboo_query(request.user.project)
+    submissions_list.sort(key=lambda x: x['end'], reverse=True)
 
-    for sub in submissions_list:
-        if sub.get('sample_id_sample_barcode_id', 'n/a') == u'n/a':
-            submissions_list.remove(sub)
-
-    from pprint import pprint as pp ; pp(submissions_list)
+    # from pprint import pprint as pp ; pp(submissions_list)
 
     paginator = FlynsarmyPaginator(submissions_list, 20, adjacent_pages=2)
 
