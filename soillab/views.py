@@ -134,15 +134,13 @@ def form_splitter(request, project_slug='soildoc'):
     # we don't submit empty forms to formhub.
     # must be a suffixed field!
     AVAIL_SUFFIXES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    empty_trigger = 'sample_id/sample_barcode_id'
+    empty_trigger = 'sample_id_$$/sample_barcode_id_$$'
 
     # map field suffixes with IDs in holder
     # we exclude forms with no data on trigger field so it won't be process
     # nor sent to formhub
     indexes = [l for l in AVAIL_SUFFIXES 
-                 if jsform.get(u'%(field)s_%(suffix)s'
-                               % {'field': empty_trigger,
-                                  'suffix': l}, None)]
+                 if jsform.get(empty_trigger.replace('$$', l), None)]
 
     # initialize holder for each form]
     forms = [{'single_letter': l} for l in indexes]
