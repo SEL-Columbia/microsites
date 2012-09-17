@@ -97,3 +97,9 @@ def format_percent(value, precision=2, french=True):
         return number_format(float(value) * 100, precision, french) + '%'
     except:
         return value
+
+
+@register.filter(name='truncate')
+@stringfilter
+def truncate(value, len=2):
+    return value[0:int(len)]

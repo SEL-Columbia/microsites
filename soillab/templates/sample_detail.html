@@ -12,16 +12,41 @@
 
 {% block content %}
 
-<h3>Infos</h3>
-<p>Collected on {{ sample.today }}</p>
+<dl>
+    <dt>Collected on</dt>
+    <dd>{{ sample.today }}</dd>
+    <dt>Location</dt>
+    <dd>{% include "gps_link.html" with sample=sample %}</dd>
+    <dt>Famer Name</dt>
+    <dd>{{ sample.farmer_name }}</dd>
+</dl>
 
-<h3>Results</h3>
+<h3>Soil Properties</h3>
 <table class="table table-striped sample-results">
 <tr><td>pH (H<sub>2</sub>O)</td><td class='result_value'>{{ sample.ph_water_group_ph_water }}</td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
+<tr><td>EC</td><td class='result_value'>{{ sample.ec_group_ec }}</td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
+<tr><td>Soluble Salts</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
 <tr><td>pH (CaCl<sub>2</sub>)</td><td class='result_value'>{{ sample.ph_cacl_ph_cacl2_sample }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>pH (CaCl<sub>2</sub>) Δ</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Nitrate-Nitrogen Reading</td><td class='result_value'>{{ sample.nitrate_group_nitrate }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Available Soil Nitrogen</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Potassium-Nitrogen Reading</td><td class='result_value'>{{ sample.potassium_potassium_sample }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Available Potassium Nitrogen</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Phosphorus ULR Reading</td><td class='result_value'>{{ sample.phosphorus_ppb_meter_group_phosphorus_ppb_meter }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Phosphorus LR Reading</td><td class='result_value'>{{ sample.phosphorus_ppm_meter_group_phosphorus_ppm_meter }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Available Soil Phosphorus</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Soil Extract in S Vial</td><td class='result_value'>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Water in S Vial</td><td class='result_value'>{{ sample.sulfur_analysis_sulfur_analysis_vial_water }}<br />
+s_ppb<br />
+s_ppm</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+<tr><td>Available Soil Sulfur</td><td class='result_value'>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}<br />
+{{ sample.sulfur_ppm_meter_group_sulfur_ppm_meter }}<br />
+{{ sample.sulfur_ppb_meter_group_sulfur_ppb_meter }}<br />
+s_ppb<br/>
+s_ppm</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
 </table>
 
-<h3>Recommendations</h3>
+<h3>Soil Fertility Recommendations</h3>
 <ul id="recommendations">
     <li>Raise Nitrogen levels
         <p>Use a tuba and a spoon with sugar on the soil</p></li>
@@ -29,11 +54,10 @@
         <p>Rince with folic acid every morning at 5am.</p></li>
 </ul>
 
-<h3>Raw Data</h3>
-<table class="table table-striped">
-<tr><th>Survey start</th><td>{{ sample.start }}</td></tr>
-<tr><th>Survey end</th><td>{{ sample.end }}</td></tr>
-<tr><th>Nitrate</th><td>{{ sample.nitrate_group_nitrate }}</td></tr>
-<tr><th>Sulfur vial extract</th><td>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}</td></tr>
+<h3>Raw Input Data</h3>
+<table class="table table-striped" id="raw_data">
+{% for field_name, field_value in sample.items %}
+<tr><th class="word-wrap">{{ field_name }}</th><td>{{ field_value }}</td></tr>
+{% endfor %}
 </table>
 {% endblock %}
