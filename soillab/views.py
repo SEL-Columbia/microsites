@@ -22,8 +22,10 @@ from microsite.bamboo import (bamboo_query)
 
 from soillab.spid_ssid import generate_ssids
 
+DEFAULT_PROJECT = Project.objects.get(slug='soildoc')
 
-@project_required
+
+@project_required(guests=DEFAULT_PROJECT)
 def samples_list(request, search_string=None):
     context = {}
 
@@ -54,7 +56,7 @@ def samples_list(request, search_string=None):
     return render(request, 'samples_list.html', context)
 
 
-@project_required
+@project_required(guests=DEFAULT_PROJECT)
 def sample_detail(request, sample_id):
     context = {}
 
