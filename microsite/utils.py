@@ -79,8 +79,13 @@ def dump_json(obj, default=None):
         default = date_default
     return json.dumps(obj, default=default)
 
+def bamboo_datetime_hook(obj):
+    if isinstance(obj, dict) and obj.has_key(u'$date'):
+        return datetime.datetime.fromtimestamp(int(obj.get(u'$date')) / 1000)
+    return obj
 
-def load_json(json_str, object_hook=None):
+
+def load_json(json_str, object_hook=bamboo_datetime_hook):
     return json.loads(json_str, object_hook=object_hook)
 
 

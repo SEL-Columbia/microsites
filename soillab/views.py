@@ -118,6 +118,13 @@ def form_splitter(request, project_slug='soildoc'):
     except:
         return HttpResponse(u"Unable to parse JSON data", status=400)
 
+    # name of a field which if None marks the form as empty
+    # we don't submit empty forms to formhub.
+    # must be a suffixed field!
+    EMPTY_VALUES = (None, u'n/a', u'')
+    empty_trigger = 'sample_barcode_id'
+    empty_forms = []
+
     # map field suffixes with IDs in holder
     indexes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     # initialize holder for each form]
@@ -138,10 +145,15 @@ def form_splitter(request, project_slug='soildoc'):
             # handle group field differently (parent holding the fields)
             if '/' in field:
                 group, real_field = target_field.split('/', 1)
+                # check for emptyness
+                if real_field == empty_trigger and value in EMPTY_VALUES:
+                    empty_forms.append(target_suffix)
                 if not group in form:
                     form[group] = {}
                 form[group].update({real_field: value})
             else:
+                if field == empty_trigger and value in EMPTY_VALUES:
+                    empty_forms.append(target_suffix)
                 form.update({field: value})
         # otherwise, it's a common field, add to all
         else:
@@ -172,7 +184,9 @@ def form_splitter(request, project_slug='soildoc'):
         
         return xml_head + dict2xml(jsform) + xml_tail
 
-    xforms = [json2xform(forms[indexes.index(i)].copy()) for i in indexes]
+    xforms = [json2xform(forms[indexes.index(i)].copy()) 
+              for i in indexes 
+              if not i in empty_forms]
 
     try:
         submit_xml_forms_formhub(project, xforms, as_bulk=False)

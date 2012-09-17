@@ -7,13 +7,18 @@ html, body {
 
 #header {
 	background-color: #4f9b37;
-    background-image: url('../soildoc_logo.jpg');
+    background-image: url('../soildoc_logo_small.jpg');
     width: 100%;
     min-width: 320px;
-    min-height: 231px;
+    min-height: 40px;
     background-position: top center;
     background-repeat: no-repeat;
     cursor: pointer;
+}
+
+#page.home #header {
+    background-image: url('../soildoc_logo.jpg');
+    min-height: 231px;
 }
 
 #header h1, #header h2 {
