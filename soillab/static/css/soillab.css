@@ -150,3 +150,21 @@ ul#mainlist {
 #content h3 {
     color: #225918;
 }
+
+table.sample-results td.result_value {
+    font-weight: bold;
+    font: monospace;
+}
+
+ul#recommendations {
+    margin-left: 0;
+    list-style-type: none;
+}
+
+ul#recommendations li {
+    font-weight: bold;
+}
+
+ul#recommendations li p {
+    font-weight: normal;
+}

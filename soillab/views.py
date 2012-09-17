@@ -68,7 +68,7 @@ def sample_detail(request, sample_id):
         raise Http404(u"Requested Sample (%(sample)s) does not exist." 
                       % {'sample': sample_id})
 
-    # from pprint import pprint as pp ; pp(sample)
+    from pprint import pprint as pp ; pp(sample)
 
     context.update({'sample': sample})
     

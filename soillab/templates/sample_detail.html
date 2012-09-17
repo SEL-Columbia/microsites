@@ -13,18 +13,26 @@
 {% block content %}
 
 <h3>Infos</h3>
-<p>meta-data here</p>
+<p>Collected on {{ sample.today }}</p>
 
 <h3>Results</h3>
-<p>Results table here</p>
+<table class="table table-striped sample-results">
+<tr><td>pH (H<sub>2</sub>O)</td><td class='result_value'>{{ sample.ph_water_group_ph_water }}</td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
+<tr><td>pH (CaCl<sub>2</sub>)</td><td class='result_value'>{{ sample.ph_cacl_ph_cacl2_sample }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+</table>
 
-<h3>Recommendations</p>
-<p>reco text here</p>
+<h3>Recommendations</h3>
+<ul id="recommendations">
+    <li>Raise Nitrogen levels
+        <p>Use a tuba and a spoon with sugar on the soil</p></li>
+    <li>Raise Potassium levels
+        <p>Rince with folic acid every morning at 5am.</p></li>
+</ul>
 
 <h3>Raw Data</h3>
 <table class="table table-striped">
-<tr><th>Start</th><td>{{ sample.start }}</td></tr>
-<tr><th>End</th><td>{{ sample.end }}</td></tr>
+<tr><th>Survey start</th><td>{{ sample.start }}</td></tr>
+<tr><th>Survey end</th><td>{{ sample.end }}</td></tr>
 <tr><th>Nitrate</th><td>{{ sample.nitrate_group_nitrate }}</td></tr>
 <tr><th>Sulfur vial extract</th><td>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}</td></tr>
 </table>
