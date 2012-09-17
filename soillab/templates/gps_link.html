@@ -1,0 +1,2 @@
+{% load mstag %}
+<a href="https://maps.google.com/maps?z=15&q={{ sample.sample_gps__sample_gps_id_latitude }},{{ sample.sample_gps__sample_gps_id_longitude }}+(Sample {{ sample.single_letter|upper }})" title="View on Google Map"><button type="button" class="btn btn-mini">{{ sample.sample_gps__sample_gps_id_latitude|truncate:6 }}, {{ sample.sample_gps__sample_gps_id_longitude|truncate:6 }}<i class="icon-map-marker"></i></button></a>

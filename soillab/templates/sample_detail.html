@@ -22,7 +22,7 @@ $(".raw_data_btn").click(function () {
     <dt>Location</dt>
     <dd>{% include "gps_link.html" with sample=sample %}</dd>
     <dt>Famer Name</dt>
-    <dd>{{ sample.farmer_name }}</dd>
+    <dd>{{ sample.farmer_name|default:"n/a" }}</dd>
 </dl>
 
 <h3>Soil Properties</h3>
