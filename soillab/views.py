@@ -128,9 +128,9 @@ def form_splitter(request, project_slug='soildoc'):
     # we exclude forms with no data on trigger field so it won't be process
     # nor sent to formhub
     indexes = [l for l in AVAIL_SUFFIXES 
-                 if (u'%(field)s_%(suffix)s'
-                     % {'field': empty_trigger,
-                        'suffix': l}, None) in jsform]
+                 if jsform.get(u'%(field)s_%(suffix)s'
+                               % {'field': empty_trigger,
+                                  'suffix': l}, None)]
 
     # initialize holder for each form]
     forms = [{'single_letter': l} for l in indexes]
