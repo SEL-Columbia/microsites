@@ -7,20 +7,21 @@ html, body {
 
 #header {
 	background-color: #4f9b37;
-    background-image: url('../soildoc_logo_small.jpg');
+    background-image: url('../soildoc_logo2.jpg');
+    background-position: center center;
+    min-height: 46px;
+
     width: 100%;
     min-width: 320px;
-    min-height: 40px;
+    /*min-height: 40px;*/
     background-position: top center;
     background-repeat: no-repeat;
     cursor: pointer;
     border-bottom: 1px solid #333333;
+    text-align: center;
+    vertical-align: middle;
 }
 
-#page.home #header {
-    background-image: url('../soildoc_logo.jpg');
-    min-height: 231px;
-}
 
 #header h1, #header h2 {
     display: none;
@@ -154,6 +155,7 @@ ul#mainlist {
 table.sample-results td.result_value {
     font-weight: bold;
     font: monospace;
+    text-align: center;
 }
 
 ul#recommendations {
@@ -169,23 +171,27 @@ ul#recommendations li p {
     font-weight: normal;
 }
 
-dl {
-    margin-bottom:50px;
+.sample-meta-data {
+    margin-bottom:1em;
+    border-collapse:separate;
+    border-spacing:0 0.5em;
 }
  
-dl dt {
+.sample-meta-data th {
     background:#4f9b37;
     color:#fff;
-    float:left;
     font-weight:bold;
-    margin-right:10px;
-    padding:5px; 
-    width:8em;
+    padding:5px;
+    text-align: left;
+}
+
+.sample-meta-data tr {
+    margin-bottom: 1em;
 }
  
-dl dd {
-    margin:2px 0;
-    padding:5px 0;
+.sample-meta-data td {
+    padding:5px;
+
 }
 
 #raw_data {
@@ -203,4 +209,5 @@ dl dd {
 
 .sample-pic img {
     border-radius: 4px;
+    display: block;
 }

@@ -2,6 +2,7 @@
 
 import json
 import re
+from collections import OrderedDict
 
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
@@ -38,7 +39,7 @@ def samples_list(request, search_string=None):
     submissions_list = bamboo_query(request.user.project)
     submissions_list.sort(key=lambda x: x['end'], reverse=True)
 
-    # from pprint import pprint as pp ; pp(submissions_list)
+    from pprint import pprint as pp ; pp(submissions_list)
 
     paginator = FlynsarmyPaginator(submissions_list, 20, adjacent_pages=2)
 
@@ -68,9 +69,12 @@ def sample_detail(request, sample_id):
         raise Http404(u"Requested Sample (%(sample)s) does not exist." 
                       % {'sample': sample_id})
 
+    results = soil_results(sample)
+
     from pprint import pprint as pp ; pp(sample)
 
-    context.update({'sample': sample})
+    context.update({'sample': sample,
+                    'results': results})
     
     return render(request, 'sample_detail.html', context)
 
@@ -205,3 +209,237 @@ def form_splitter(request, project_slug='soildoc'):
         return HttpResponse(str(e), status=500)
 
     return HttpResponse('OK', status=201)
+
+
+def soil_results(sample):
+    # initialize results dict with labels
+    n = 'name'
+    v = 'value'
+    b = 'badge'
+    lvl = 'level_text'
+
+    lvlel = u"Extremely Low"
+    lvlvl = u"Very Low"
+    lvll = u"Low"
+    lvlm = u"Medium"
+    lvlmh = u"Medium/High"
+    lvlh = u"High"
+    lvlvh = u"Very High"
+    lvlb = u"No Data"
+
+    bvl = 'important' # very low
+    bvh = 'important' # very high
+    bvh = 'important' # very high
+    bl = 'warning' # low
+    bh = 'warning' # high
+    bh = 'warning' # high
+    bn = 'info' # neutral
+    bg = 'success' # good
+    bb = 'inverse' # blank
+
+    results = OrderedDict([
+        ('ec', {n: u"EC", v: 0, b: bb, lvl: lvlb}),
+        ('ph_water', {n: u"pH Water", v: 0, b: bb, lvl: lvlb}),
+        ('ph_cacl', {n: u"pH Salt", v: 0, b: bb, lvl: lvlb}),
+        ('delta_ph', {n: u"Δ pH", v: 0, b: bb, lvl: lvlb}),
+        ('soil_bulk_density', {n: u"Soil Bulk Density", v: 0, b: bb, lvl: lvlb}),
+        ('soil_moisture', {n: u"Soil Moisture at Sampling", v: 0, b: bb, lvl: lvlb}),
+        ('soil_nitrate', {n: u"Soil Nitrate", v: 0, b: bb, lvl: lvlb}),
+        ('soil_potassium', {n: u"Soil Potassium", v: 0, b: bb, lvl: lvlb}),
+        ('soil_phosphorus', {n: u"Soil Phosphorus", v: 0, b: bb, lvl: lvlb}),
+        ('soil_sulfate', {n: u"Soil Sulfate", v: 0, b: bb, lvl: lvlb}),
+        # ('soil_organic_matter', {n: u"Soil Organic Matter", v: 0, b: bb, lvl: lvlb}),
+    ])
+
+    # EC GROUP
+    soil_units = {
+        'microseimens_per_cm': 1000,
+        'parts_per_million': 640,
+        'milliseimens_per_cm': 0.001,
+        'decisiemens_per_meter': 1,
+        'mmhos_per_cm': 1,
+    }
+
+    try:
+        soil_ec = sample.get('ec_sample_ec', None) - sample.get('ec_sample_water_ec', None)
+    except:
+        soil_ec = None
+
+    try:
+        results['ec'][v] = soil_ec * soil_units.get('ec_units', 1)
+    except:
+        results['ec'][v] = None
+
+    # pH H2O
+    results['ph_water'][v] = sample.get('ph_water_sample_ph_water', None)
+
+    # pH CaCl
+    results['ph_cacl'][v] = sample.get('ph_cacl2_sample_ph_cacl2', None)
+
+    # Δ pH
+    try:
+        results['delta_ph'][v] = (sample.get('ph_water_sample_ph_water') 
+                                  - sample.get('ph_cacl2_sample_ph_cacl2'))
+    except:
+        results['delta_ph'][v] = None
+
+    # soil bulk density
+    soil_densities = {
+        'coarse': 1.6,
+        'moderately_coarse': 1.4,
+        'medium': 1.2,
+        'fine': 1.0
+    }
+    results['soil_bulk_density'][v] = soil_densities.get(sample.get('sample_id_sample_soil_texture', None), None)
+
+    # TODO: find out which fields.
+    # percent moisture by weight
+    # 3 fields of testing averaged.
+    moisture_values = ['sample_id_sample_soil_moisture', ]
+    for field in moisture_values:
+        if sample.get(field, None) is None:
+            moisture_values.pop(field)
+    percent_moisture_by_weight = results['soil_moisture'][v] # sum([sample.get(x, 0.0) for x in moisture_values], 0.0) / len(moisture_values)
+
+    # soil moisture at sampling
+    try:
+        results['soil_moisture'][v] = (sample.get('sample_id_sample_automated_soil_moisture') 
+                                       / results['soil_bulk_density'][v])
+    except:
+        results['soil_moisture'][v] = None
+
+    # soil nitrate
+    try:
+        results['soil_nitrate'][v] = (
+            (sample.get('nitrate_sample_nitrate') 
+             - sample.get('nitrate_blank_nitrate')) 
+            * (30 / (1 - (percent_moisture_by_weight * 15))) )
+    except:
+        results['soil_nitrate'][v] = None
+
+    # soil potassium
+    try:
+        results['soil_potassium'][v] = (
+            (sample.get('potassium_sample_potassium') 
+             - sample.get('potassium_blank_potassium')) 
+            * (30 / (1 - (percent_moisture_by_weight * 15))) )
+    except:
+        results['soil_potassium'][v] = None
+
+    # soil phosphorus
+    try:
+        soil_phosphorus_ppb = ((sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None) 
+                                - sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None))
+                               * (10 / 2) 
+                               * ( 30 / 
+                                  (1 - (percent_moisture_by_weight * 15))) )
+    except:
+        soil_phosphorus_ppb = None
+
+    try:
+        soil_phosphorus_ppm = ((sample.get('phosphorus_ppm_meter_sample_phosphorus_ppm_meter', None)
+                                - sample.get('phosphorus_ppm_meter_blank_phosphorus_ppm_meter'))
+                               * (10 / 2) 
+                               * (30 / (1 - (percent_moisture_by_weight * 15)))
+                               * (30.97 / 94.97))
+    except:
+        soil_phosphorus_ppm = None
+
+    # PPB measure is preffered over PPM but might not be available.
+    if soil_phosphorus_ppb is None:
+        results['soil_phosphorus'][v] = soil_phosphorus_ppm
+    else:
+        results['soil_phosphorus'][v] = soil_phosphorus_ppb
+
+    # soil sulfate
+    try:
+        slope_low_spike_ppb = 6 / sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None)
+    except:
+        slope_low_spike_ppb = None
+
+    try:
+        slope_high_spike_ppm = 16 / sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None)
+    except:
+        slope_high_spike_ppm = None
+
+    try:
+        soil_sulfur_ppb =  (
+                            ((sample.get('sulfur_ppb_meter_sample_sulfur_ppb_meter', None) * slope_low_spike_ppb)
+                              - sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None))
+                            * (sample.get('sulfur_analysis_sample_sulfur_analysis_vial_water', None) / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
+                            * (30 / (1 - (percent_moisture_by_weight * 15)))
+                           )
+    except:
+        soil_sulfur_ppb = None
+
+    try:
+        soil_sulfur_ppm = (
+                            ((sample.get('sulfur_ppm_meter_sample_sulfur_ppm_meter', None) * slope_high_spike_ppm)
+                              - sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None))
+                            * (sample.get('sulfur_analysis_sample_sulfur_analysis_vial_water', None) / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
+                            * (30 / (1 - (percent_moisture_by_weight * 15)))
+                           )
+    except:
+        soil_sulfur_ppm = None
+
+    # PPB measure is preffered over PPM but might not be available.
+    if soil_sulfur_ppb is None:
+        results['soil_sulfate'][v] = soil_sulfur_ppm
+    else:
+        results['soil_sulfate'][v] = soil_sulfur_ppb
+
+    # soil organic matter
+    # no input
+
+    return results
+
+'''
+{u'concentration': 0.0072,
+ u'ec_blank_ec': 200.0,
+ u'ec_sample_ec': 400.0,
+ u'ec_units': u'microseimens_per_cm',
+ u'end': datetime.datetime(2012, 9, 17, 17, 49, 39),
+ u'imei': 354635033195574,
+ u'nitrate_blank_nitrate': 35.0,
+ u'nitrate_sample_nitrate': 23.0,
+ u'ph_cacl2_blank_ph_cacl2': 8.0,
+ u'ph_cacl2_sample_ph_cacl2': 3.0,
+ u'ph_water_blank_ph_water': 12.0,
+ u'ph_water_sample_ph_water': 9.0,
+ u'phosphorus_ppb_meter_blank_phosphorus_ppb_meter': u'n/a',
+ u'phosphorus_ppb_meter_phosphorus_ppb_note': u'n/a',
+ u'phosphorus_ppb_meter_sample_phosphorus_ppb_meter': 87.0,
+ u'phosphorus_ppm_meter_blank_phosphorus_ppm_meter': u'n/a',
+ u'phosphorus_ppm_meter_phosphorus_ppm_note': u'n/a',
+ u'phosphorus_ppm_meter_sample_phosphorus_ppm_meter': 1.1,
+ u'potassium_blank_potassium': 12.0,
+ u'potassium_sample_potassium': 15.0,
+ u's_concentration': 27.450983,
+ u's_spike_drops_s_spike': 7,
+ u'salt_solution_drops_cacl': 6,
+ u'sample_id__sample_gps_id_altitude': 385.0,
+ u'sample_id__sample_gps_id_latitude': 12.665659189223875,
+ u'sample_id__sample_gps_id_longitude': -7.9694008827207155,
+ u'sample_id__sample_gps_id_precision': 4.641,
+ u'sample_id_sample_automated_soil_moisture': 1.9,
+ u'sample_id_sample_barcode_id': u'NG-7PvKoD-2',
+ u'sample_id_sample_crop': u'Grass',
+ u'sample_id_sample_farmer_id': u'n/a',
+ u'sample_id_sample_farmer_name': u'Alou',
+ u'sample_id_sample_field_photo': u'1347903807575.jpg',
+ u'sample_id_sample_gps_id': u'12.665659189223875 -7.9694008827207155 385.0 4.641',
+ u'sample_id_sample_reason_sampling': u'None',
+ u'sample_id_sample_soil_moisture': u'wilting_point',
+ u'sample_id_sample_soil_texture': u'fine',
+ u'single_letter': u'b',
+ u'start': datetime.datetime(2012, 9, 17, 17, 38, 24),
+ u'sulfur_analysis_sample_sulfur_analysis_vial_extract': 4,
+ u'sulfur_analysis_sample_sulfur_analysis_vial_water': u'n/a',
+ u'sulfur_ppb_meter_blank_sulfur_ppb_meter': u'n/a',
+ u'sulfur_ppb_meter_sample_sulfur_ppb_meter': 2.1,
+ u'sulfur_ppb_meter_sulfur_ppb_note': u'n/a',
+ u'sulfur_ppm_meter_blank_sulfur_ppm_meter': u'n/a',
+ u'sulfur_ppm_meter_sample_sulfur_ppm_meter': 0.9,
+ u'sulfur_ppm_meter_sulfur_ppm_note': u'n/a',
+ u'today': datetime.datetime(2012, 9, 16, 0, 0)}
+'''

@@ -58,7 +58,7 @@ def uid_from_urlid(url_id):
 
 @register.filter(name='numberformat')
 @stringfilter
-def number_format(value, precision=2, french=True):
+def number_format(value, precision=2, french=False):
     try:
         format = '%d'
         value = int(value)

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load mstag %}
 
 {% block pageclass %}regular{% endblock %}
 
@@ -15,41 +16,45 @@ $(".raw_data_btn").click(function () {
 {% endblock %}
 
 {% block content %}
+{% if sample.sample_id_sample_field_photo %}
+<div class='sample-pic'><img class='img-circle' src="https://formhub.org/attachment/?media_file=labinabox/attachments/{{ sample.sample_id_sample_field_photo }}&" /></div>
+{% endif %}
 
-<div class='sample-pic'><img class='img-circle' src="https://formhub.org/attachment/?media_file=labinabox/attachments/1347903636373.jpg&" /></div>
-
-<dl>
-    <dt>Collected on</dt>
-    <dd>{{ sample.today }}</dd>
-    <dt>Location</dt>
-    <dd>{% include "gps_link.html" with sample=sample %}</dd>
-    <dt>Famer Name</dt>
-    <dd>{{ sample.farmer_name|default:"n/a" }}</dd>
-</dl>
+<table class="sample-meta-data">
+    <tr><th>Collected on</th>
+    <td>{{ sample.today }}</td></tr>
+    <tr><th>Location</th>
+    <td>{% include "gps_link.html" with sample=sample %}</td></tr>
+    <tr><th>Famer Name</th>
+    <td>{{ sample.sample_id_sample_farmer_name|default:"n/a" }}</td></tr>
+    {% if sample.sample_id_sample_farmer_id %}
+    <tr><th>Famer ID</th>
+    <td>{{ sample.sample_id_sample_farmer_id|default:"n/a" }}</td></tr>
+    {% endif %}
+    {% if sample.sample_id_sample_reason_sampling %}
+    <tr><th>Sampling Reason</th>
+    <td>{{ sample.sample_id_sample_reason_sampling|default:"n/a" }}</td></tr>
+    {% endif %}
+    {% if sample.sample_id_sample_soil_texture %}
+    <tr><th>Soil Texture</th>
+    <td>{{ sample.sample_id_sample_soil_texture|default:"n/a" }}</td></tr>
+    {% endif %}
+    {% if sample.sample_id_sample_soil_moisture %}
+    <tr><th>Soil Moisture</th>
+    <td>{{ sample.sample_id_sample_soil_moisture|default:"n/a" }}</td></tr>
+    {% endif %}
+    {% if sample.sample_id_sample_crop %}
+    <tr><th>Soil Main Crop</th>
+    <td>{{ sample.sample_id_sample_crop|default:"n/a" }}</td></tr>
+    {% endif %}
+</table>
 
 <h3>Soil Properties</h3>
 <table class="table table-striped sample-results">
-<tr><td>pH (H<sub>2</sub>O)</td><td class='result_value'>{{ sample.ph_water_group_ph_water }}</td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
-<tr><td>EC</td><td class='result_value'>{{ sample.ec_group_ec }}</td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
-<tr><td>Soluble Salts</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-success">GOOD</span></td></tr>
-<tr><td>pH (CaCl<sub>2</sub>)</td><td class='result_value'>{{ sample.ph_cacl_ph_cacl2_sample }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>pH (CaCl<sub>2</sub>) Δ</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Nitrate-Nitrogen Reading</td><td class='result_value'>{{ sample.nitrate_group_nitrate }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Available Soil Nitrogen</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Potassium-Nitrogen Reading</td><td class='result_value'>{{ sample.potassium_potassium_sample }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Available Potassium Nitrogen</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Phosphorus ULR Reading</td><td class='result_value'>{{ sample.phosphorus_ppb_meter_group_phosphorus_ppb_meter }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Phosphorus LR Reading</td><td class='result_value'>{{ sample.phosphorus_ppm_meter_group_phosphorus_ppm_meter }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Available Soil Phosphorus</td><td class='result_value'></td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Soil Extract in S Vial</td><td class='result_value'>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Water in S Vial</td><td class='result_value'>{{ sample.sulfur_analysis_sulfur_analysis_vial_water }}<br />
-s_ppb<br />
-s_ppm</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
-<tr><td>Available Soil Sulfur</td><td class='result_value'>{{ sample.sulfur_analysis_sulfur_analysis_vial_extract }}<br />
-{{ sample.sulfur_ppm_meter_group_sulfur_ppm_meter }}<br />
-{{ sample.sulfur_ppb_meter_group_sulfur_ppb_meter }}<br />
-s_ppb<br/>
-s_ppm</td><td class='result_indic'><span class="badge badge-warning">LOW</span></td></tr>
+{% for result in results.itervalues %}
+<tr><td>{{ result.name }}</td><td class='result_value'>{{ result.value|default_if_none:"n/a"|numberformat }}</td><td class='result_indic'><span class="badge badge-{{ result.badge }}">{{ result.level_text|upper }}</span></td></tr>
+{% endfor %}
+
 </table>
 
 <h3>Soil Fertility Recommendations</h3>
@@ -71,3 +76,52 @@ s_ppm</td><td class='result_indic'><span class="badge badge-warning">LOW</span><
 </table>
 </div>
 {% endblock %}
+
+{u'concentration': 0.0072,
+ u'ec_blank_ec': 200.0,
+ u'ec_sample_ec': 400.0,
+ u'ec_units': u'microseimens_per_cm',
+ u'end': datetime.datetime(2012, 9, 17, 17, 49, 39),
+ u'imei': 354635033195574,
+ u'nitrate_blank_nitrate': 35.0,
+ u'nitrate_sample_nitrate': 23.0,
+ u'ph_cacl2_blank_ph_cacl2': 8.0,
+ u'ph_cacl2_sample_ph_cacl2': 3.0,
+ u'ph_water_blank_ph_water': 12.0,
+ u'ph_water_sample_ph_water': 9.0,
+ u'phosphorus_ppb_meter_blank_phosphorus_ppb_meter': u'n/a',
+ u'phosphorus_ppb_meter_phosphorus_ppb_note': u'n/a',
+ u'phosphorus_ppb_meter_sample_phosphorus_ppb_meter': 87.0,
+ u'phosphorus_ppm_meter_blank_phosphorus_ppm_meter': u'n/a',
+ u'phosphorus_ppm_meter_phosphorus_ppm_note': u'n/a',
+ u'phosphorus_ppm_meter_sample_phosphorus_ppm_meter': 1.1,
+ u'potassium_blank_potassium': 12.0,
+ u'potassium_sample_potassium': 15.0,
+ u's_concentration': 27.450983,
+ u's_spike_drops_s_spike': 7,
+ u'salt_solution_drops_cacl': 6,
+ u'sample_id__sample_gps_id_altitude': 385.0,
+ u'sample_id__sample_gps_id_latitude': 12.665659189223875,
+ u'sample_id__sample_gps_id_longitude': -7.9694008827207155,
+ u'sample_id__sample_gps_id_precision': 4.641,
+ u'sample_id_sample_automated_soil_moisture': 1.9,
+ u'sample_id_sample_barcode_id': u'NG-7PvKoD-2',
+ u'sample_id_sample_crop': u'Grass',
+ u'sample_id_sample_farmer_id': u'n/a',
+ u'sample_id_sample_farmer_name': u'Alou',
+ u'sample_id_sample_field_photo': u'1347903807575.jpg',
+ u'sample_id_sample_gps_id': u'12.665659189223875 -7.9694008827207155 385.0 4.641',
+ u'sample_id_sample_reason_sampling': u'None',
+ u'sample_id_sample_soil_moisture': u'wilting_point',
+ u'sample_id_sample_soil_texture': u'fine',
+ u'single_letter': u'b',
+ u'start': datetime.datetime(2012, 9, 17, 17, 38, 24),
+ u'sulfur_analysis_sample_sulfur_analysis_vial_extract': 4,
+ u'sulfur_analysis_sample_sulfur_analysis_vial_water': u'n/a',
+ u'sulfur_ppb_meter_blank_sulfur_ppb_meter': u'n/a',
+ u'sulfur_ppb_meter_sample_sulfur_ppb_meter': 2.1,
+ u'sulfur_ppb_meter_sulfur_ppb_note': u'n/a',
+ u'sulfur_ppm_meter_blank_sulfur_ppm_meter': u'n/a',
+ u'sulfur_ppm_meter_sample_sulfur_ppm_meter': 0.9,
+ u'sulfur_ppm_meter_sulfur_ppm_note': u'n/a',
+ u'today': datetime.datetime(2012, 9, 16, 0, 0)}
