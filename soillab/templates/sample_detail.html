@@ -37,11 +37,11 @@ $(".raw_data_btn").click(function () {
     {% endif %}
     {% if sample.sample_id_sample_soil_texture %}
     <tr><th>Soil Texture</th>
-    <td>{{ sample.sample_id_sample_soil_texture|default:"n/a"|KeyName:soil_texture }}</td></tr>
+    <td>{{ sample.sample_id_sample_soil_texture|KeyName:"soildoc|soil_texture"|default:"n/a" }}</td></tr>
     {% endif %}
     {% if sample.sample_id_sample_soil_moisture %}
     <tr><th>Soil Moisture</th>
-    <td>{{ sample.sample_id_sample_soil_moisture|default:"n/a"|KeyName:soil_moisture }}</td></tr>
+    <td>{{ sample.sample_id_sample_soil_moisture|KeyName:"soildoc|soil_moisture"|default:"n/a" }}</td></tr>
     {% endif %}
     {% if sample.sample_id_sample_crop %}
     <tr><th>Soil Main Crop</th>
