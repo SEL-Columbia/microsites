@@ -237,6 +237,7 @@ def soil_results(sample):
     bg = 'success' # good
     bb = 'inverse' # blank
 
+    # initialize the result dict for ordering.
     results = OrderedDict([
         ('ec', {n: u"EC", v: 0, b: bb, lvl: lvlb}),
         ('ph_water', {n: u"pH Water", v: 0, b: bb, lvl: lvlb}),
@@ -353,12 +354,12 @@ def soil_results(sample):
 
     # soil sulfate
     try:
-        slope_low_spike_ppb = 6 / sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None)
+        slope_low_spike_ppb = 6 / sample.get('sulfur_ppb_meter_blank_sulfur_vial_ppb', None)
     except:
         slope_low_spike_ppb = None
 
     try:
-        slope_high_spike_ppm = 16 / sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None)
+        slope_high_spike_ppm = 16 / sample.get('sulfur_ppm_meter_high_spike_sulfur_analysis_vial_ppm', None)
     except:
         slope_high_spike_ppm = None
 

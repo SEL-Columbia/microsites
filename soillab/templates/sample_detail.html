@@ -17,7 +17,7 @@ $(".raw_data_btn").click(function () {
 
 {% block content %}
 {% if sample.sample_id_sample_field_photo %}
-<div class='sample-pic'><img class='img-circle' src="https://formhub.org/attachment/?media_file=labinabox/attachments/{{ sample.sample_id_sample_field_photo }}&" /></div>
+<div class='sample-pic'><img class='img-rounded' src="https://formhub.org/attachment/?media_file=labinabox/attachments/{{ sample.sample_id_sample_field_photo }}&" /></div>
 {% endif %}
 
 <table class="sample-meta-data">
@@ -37,11 +37,11 @@ $(".raw_data_btn").click(function () {
     {% endif %}
     {% if sample.sample_id_sample_soil_texture %}
     <tr><th>Soil Texture</th>
-    <td>{{ sample.sample_id_sample_soil_texture|default:"n/a" }}</td></tr>
+    <td>{{ sample.sample_id_sample_soil_texture|default:"n/a"|KeyName:soil_texture }}</td></tr>
     {% endif %}
     {% if sample.sample_id_sample_soil_moisture %}
     <tr><th>Soil Moisture</th>
-    <td>{{ sample.sample_id_sample_soil_moisture|default:"n/a" }}</td></tr>
+    <td>{{ sample.sample_id_sample_soil_moisture|default:"n/a"|KeyName:soil_moisture }}</td></tr>
     {% endif %}
     {% if sample.sample_id_sample_crop %}
     <tr><th>Soil Main Crop</th>
