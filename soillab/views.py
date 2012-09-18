@@ -158,20 +158,20 @@ def form_splitter(request, project_slug='soildoc'):
             form = forms[indexes.index(target_suffix)]
 
             # handle group field differently (parent holding the fields)
-            if '/' in field:
+            if '/' in target_field:
                 group, real_field = target_field.split('/', 1)
                 real_group, group_suffix = field_splitter(group)
                 if not real_group in form:
                     form[real_group] = {}
                 form[real_group].update({real_field: value})
             else:
-                form.update({field: value})
+                form.update({target_field: value})
         # otherwise, it's a common field, add to all
         else:
             for form in forms:
                 # handle group field differently (parent holding the fields)
-                if '/' in field:
-                    group, real_field = field.split('/', 1)
+                if '/' in target_field:
+                    group, real_field = target_field.split('/', 1)
                     real_group, group_suffix = field_splitter(group)
                     if not real_group in form:
                         form[real_group] = {}
@@ -498,5 +498,19 @@ def soil_results(sample):
 
     # soil organic matter
     # no input
+
+
+
+    #### ERRORS:
+    # phosphorus_ppb_meter_blank_phosphorus_ppb_meter
+    # phosphorus_ppb_meter_phosphorus_ppb_note
+    # phosphorus_ppm_meter_blank_phosphorus_ppm_meter
+    # phosphorus_ppm_meter_phosphorus_ppm_note
+    # sulfur_analysis_blank_sulfur_vial_ppb
+    # sulfur_analysis_high_spike_sulfur_analysis_vial_ppm
+    # sulfur_ppb_meter_blank_sulfur_ppb_meter
+    # sulfur_ppb_meter_sulfur_ppb_note
+    # sulfur_ppm_meter_blank_sulfur_ppm_meter
+    # sulfur_ppm_meter_sulfur_ppm_note
 
     return results
