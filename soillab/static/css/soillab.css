@@ -203,13 +203,12 @@ ul#recommendations li p {
 }
 
 .sample-pic {
-    margin: 0;
     text-align: center;
+    width: 100%;
 }
 
 .sample-pic img {
     border-radius: 4px;
-    display: block;
 }
 
 .result-detail {
