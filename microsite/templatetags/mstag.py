@@ -103,3 +103,12 @@ def format_percent(value, precision=2, french=True):
 @stringfilter
 def truncate(value, len=2):
     return value[0:int(len)]
+
+
+@register.filter(name='split')
+@stringfilter
+def split(value, split_on=u' '):
+    try:
+        return value.split(split_on)
+    except:
+        return value
