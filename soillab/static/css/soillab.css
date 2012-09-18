@@ -211,3 +211,12 @@ ul#recommendations li p {
     border-radius: 4px;
     display: block;
 }
+
+.result-detail {
+    font-style: italic;
+
+}
+
+.result-detail td {
+    padding-left: 1.5em;
+}

@@ -322,14 +322,18 @@ def soil_results(sample):
     if results['ph_cacl'][v]:
         results['ph_cacl'].update(level_in_range(results['ph_cacl'][v], ph_cacl_levels))
 
+    #
     # Δ pH
+    #
     try:
         results['delta_ph'][v] = (sample.get('ph_water_sample_ph_water') 
                                   - sample.get('ph_cacl2_sample_ph_cacl2'))
     except:
         results['delta_ph'][v] = None
 
+    #
     # soil bulk density
+    #
     soil_densities = {
         'coarse': 1.6,
         'moderately_coarse': 1.4,
@@ -347,14 +351,27 @@ def soil_results(sample):
             moisture_values.pop(field)
     percent_moisture_by_weight = results['soil_moisture'][v] # sum([sample.get(x, 0.0) for x in moisture_values], 0.0) / len(moisture_values)
 
+    #
     # soil moisture at sampling
+    #
     try:
         results['soil_moisture'][v] = (sample.get('sample_id_sample_automated_soil_moisture') 
                                        / results['soil_bulk_density'][v])
     except:
         results['soil_moisture'][v] = None
 
+    #
     # soil nitrate
+    #
+    nitrate_fertility_levels = OrderedDict([
+        (21, {b: bvl, lvl: lvlvl, lvlt: u"Yes-Full N recommended."}),
+        (42, {b: bl, lvl: lvll, lvlt: u"Yes-3/4 N recommended."}),
+        (65, {b: bn, lvl: lvlm, lvlt: u"Yes-1/2 N recommended."}),
+        (90, {b: bh, lvl: u"Medium/High", lvlt: u"Yes, 1/4 N recommended."}),
+        (120, {b: bh, lvl: lvlh, lvlt: u"No N more recommended."}),
+        ('_', {b: bvh, lvl: lvlvh, lvlt: u"No N recommended."}),
+        ])
+
     try:
         results['soil_nitrate'][v] = (
             (sample.get('nitrate_sample_nitrate') 
@@ -363,7 +380,21 @@ def soil_results(sample):
     except:
         results['soil_nitrate'][v] = None
 
+     # update badge levels
+    if results['soil_nitrate'][v]:
+        results['soil_nitrate'].update(level_in_range(results['soil_nitrate'][v], nitrate_fertility_levels))
+
+    #
     # soil potassium
+    #
+    potassium_fertility_levels = OrderedDict([
+        (30, {b: bvl, lvl: lvlvl, lvlt: u"K fertilizer needed: Very Likely."}),
+        (60, {b: bl, lvl: lvll, lvlt: u"K fertilizer needed: Likely."}),
+        (90, {b: bn, lvl: lvlm, lvlt: u"K fertilizer needed: 50/50."}),
+        (120, {b: bh, lvl: lvlh, lvlt: u"K fertilizer needed: Unlikely."}),
+        ('_', {b: bvh, lvl: lvlvh, lvlt: u"No K fertilizer needed."}),
+        ])
+
     try:
         results['soil_potassium'][v] = (
             (sample.get('potassium_sample_potassium') 
@@ -372,7 +403,21 @@ def soil_results(sample):
     except:
         results['soil_potassium'][v] = None
 
+     # update badge levels
+    if results['soil_potassium'][v]:
+        results['soil_potassium'].update(level_in_range(results['soil_potassium'][v], potassium_fertility_levels))
+
+    #
     # soil phosphorus
+    #
+    phosphorus_fertility_levels = OrderedDict([
+        (0.05, {b: bvl, lvl: lvlel, lvlt: u"Increasing P is top priority."}),
+        (0.1, {b: bvl, lvl: lvlvl, lvlt: u"P fertilizer needed: Very Likely."}),
+        (0.3, {b: bl, lvl: lvll, lvlt: u"P fertilizer needed: Likely."}),
+        (0.5, {b: bn, lvl: lvlm, lvlt: u"P fertilizer needed: 50/50 chance of response."}),
+        ('_', {b: bh, lvl: lvlh, lvlt: u"No P fertilizer needed."}),
+        ])
+
     try:
         soil_phosphorus_ppb = ((sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None) 
                                 - sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None))
@@ -397,7 +442,20 @@ def soil_results(sample):
     else:
         results['soil_phosphorus'][v] = soil_phosphorus_ppb
 
+     # update badge levels
+    if results['soil_phosphorus'][v]:
+        results['soil_phosphorus'].update(level_in_range(results['soil_phosphorus'][v], phosphorus_fertility_levels))
+
+    #
     # soil sulfate
+    #
+    sulfate_fertility_levels = OrderedDict([
+        (10, {b: bvl, lvl: lvlvl, lvlt: u"S fertilizer needed: Very Likely."}),
+        (15, {b: bl, lvl: lvll, lvlt: u"S fertilizer needed: Likely."}),
+        (20, {b: bn, lvl: lvlm, lvlt: u"S fertilizer needed: 50/50 chance of response."}),
+        ('_', {b: bh, lvl: lvlh, lvlt: u"No S fertilizer needed."}),
+        ])
+
     try:
         slope_low_spike_ppb = 6 / sample.get('sulfur_ppb_meter_blank_sulfur_vial_ppb', None)
     except:
@@ -434,58 +492,11 @@ def soil_results(sample):
     else:
         results['soil_sulfate'][v] = soil_sulfur_ppb
 
+     # update badge levels
+    if results['soil_sulfate'][v]:
+        results['soil_sulfate'].update(level_in_range(results['soil_sulfate'][v], sulfate_fertility_levels))
+
     # soil organic matter
     # no input
 
     return results
-
-'''
-{u'concentration': 0.0072,
- u'ec_blank_ec': 200.0,
- u'ec_sample_ec': 400.0,
- u'ec_units': u'microseimens_per_cm',
- u'end': datetime.datetime(2012, 9, 17, 17, 49, 39),
- u'imei': 354635033195574,
- u'nitrate_blank_nitrate': 35.0,
- u'nitrate_sample_nitrate': 23.0,
- u'ph_cacl2_blank_ph_cacl2': 8.0,
- u'ph_cacl2_sample_ph_cacl2': 3.0,
- u'ph_water_blank_ph_water': 12.0,
- u'ph_water_sample_ph_water': 9.0,
- u'phosphorus_ppb_meter_blank_phosphorus_ppb_meter': u'n/a',
- u'phosphorus_ppb_meter_phosphorus_ppb_note': u'n/a',
- u'phosphorus_ppb_meter_sample_phosphorus_ppb_meter': 87.0,
- u'phosphorus_ppm_meter_blank_phosphorus_ppm_meter': u'n/a',
- u'phosphorus_ppm_meter_phosphorus_ppm_note': u'n/a',
- u'phosphorus_ppm_meter_sample_phosphorus_ppm_meter': 1.1,
- u'potassium_blank_potassium': 12.0,
- u'potassium_sample_potassium': 15.0,
- u's_concentration': 27.450983,
- u's_spike_drops_s_spike': 7,
- u'salt_solution_drops_cacl': 6,
- u'sample_id__sample_gps_id_altitude': 385.0,
- u'sample_id__sample_gps_id_latitude': 12.665659189223875,
- u'sample_id__sample_gps_id_longitude': -7.9694008827207155,
- u'sample_id__sample_gps_id_precision': 4.641,
- u'sample_id_sample_automated_soil_moisture': 1.9,
- u'sample_id_sample_barcode_id': u'NG-7PvKoD-2',
- u'sample_id_sample_crop': u'Grass',
- u'sample_id_sample_farmer_id': u'n/a',
- u'sample_id_sample_farmer_name': u'Alou',
- u'sample_id_sample_field_photo': u'1347903807575.jpg',
- u'sample_id_sample_gps_id': u'12.665659189223875 -7.9694008827207155 385.0 4.641',
- u'sample_id_sample_reason_sampling': u'None',
- u'sample_id_sample_soil_moisture': u'wilting_point',
- u'sample_id_sample_soil_texture': u'fine',
- u'single_letter': u'b',
- u'start': datetime.datetime(2012, 9, 17, 17, 38, 24),
- u'sulfur_analysis_sample_sulfur_analysis_vial_extract': 4,
- u'sulfur_analysis_sample_sulfur_analysis_vial_water': u'n/a',
- u'sulfur_ppb_meter_blank_sulfur_ppb_meter': u'n/a',
- u'sulfur_ppb_meter_sample_sulfur_ppb_meter': 2.1,
- u'sulfur_ppb_meter_sulfur_ppb_note': u'n/a',
- u'sulfur_ppm_meter_blank_sulfur_ppm_meter': u'n/a',
- u'sulfur_ppm_meter_sample_sulfur_ppm_meter': 0.9,
- u'sulfur_ppm_meter_sulfur_ppm_note': u'n/a',
- u'today': datetime.datetime(2012, 9, 16, 0, 0)}
-'''
