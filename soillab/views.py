@@ -285,7 +285,7 @@ def soil_results(sample):
         ])
 
     try:
-        soil_ec = sample.get('ec_sample_ec', None) - sample.get('ec_sample_water_ec', None)
+        soil_ec = sample.get('ec_sample_ec', None) - sample.get('ec_water_ec', None)
     except:
         soil_ec = None
 
