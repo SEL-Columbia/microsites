@@ -212,11 +212,21 @@ def form_splitter(request, project_slug='soildoc'):
 
 
 def soil_results(sample):
+
+    def level_in_range(value, levels):
+        for max_value, level in levels.iteritems():
+            if not isinstance(max_value, (int, float)):
+                return level
+            if value < max_value:
+                return level
+        return levels[-1]
+
     # initialize results dict with labels
     n = 'name'
     v = 'value'
     b = 'badge'
     lvl = 'level_text'
+    lvlt = 'level_text_verbose'
 
     lvlel = u"Extremely Low"
     lvlvl = u"Very Low"
@@ -225,10 +235,11 @@ def soil_results(sample):
     lvlmh = u"Medium/High"
     lvlh = u"High"
     lvlvh = u"Very High"
+    lvlg = u"Good"
+    lvlo = u"Optimal"
     lvlb = u"No Data"
 
     bvl = 'important' # very low
-    bvh = 'important' # very high
     bvh = 'important' # very high
     bl = 'warning' # low
     bh = 'warning' # high
@@ -252,7 +263,9 @@ def soil_results(sample):
         # ('soil_organic_matter', {n: u"Soil Organic Matter", v: 0, b: bb, lvl: lvlb}),
     ])
 
+    #
     # EC GROUP
+    #
     soil_units = {
         'microseimens_per_cm': 1000,
         'parts_per_million': 640,
@@ -260,6 +273,16 @@ def soil_results(sample):
         'decisiemens_per_meter': 1,
         'mmhos_per_cm': 1,
     }
+
+    ec_levels = OrderedDict([
+        (0.1, {b: bl, lvl: lvll, lvlt: u"Low fertility, leached nutrients."}),
+        (0.3, {b: bn, lvl: lvlm, lvlt: u"Medium fertility, especially in acid soils."}),
+        (0.6, {b: bn, lvl: lvlm, lvlt: u"Slightly saline. Limiting for salt-sensitive crops."}),
+        (1.2, {b: bh, lvl: lvlh, lvlt: u"Very saline. Limiting for salt-sensitive crops. Some intolerance for salt-enduring crops."}),
+        (2.4, {b: bh, lvl: lvlh, lvlt: u"Severe salinity. Strong limitations for both salt-sensitive and tolerant crops."}),
+        (4.0, {b: bvh, lvl: lvlvh, lvlt: u"Very severe salinity. Few crops survive."}),
+        ('_', {b: bvh, lvl: lvlvh, lvlt: u"Very few crops can grow."}),
+        ])
 
     try:
         soil_ec = sample.get('ec_sample_ec', None) - sample.get('ec_sample_water_ec', None)
@@ -271,11 +294,33 @@ def soil_results(sample):
     except:
         results['ec'][v] = None
 
+    # update badge levels
+    if results['ec'][v]:
+        results['ec'].update(level_in_range(results['ec'][v], ec_levels))
+
+    #
     # pH H2O
+    #
     results['ph_water'][v] = sample.get('ph_water_sample_ph_water', None)
 
+    #
     # pH CaCl
+    #
+    ph_cacl_levels = OrderedDict([
+        (4.0, {b: bl, lvl: lvll, lvlt: u"pH is limiting: soil exhibits severe aluminum toxicity"}),
+        (5.0, {b: bl, lvl: lvll, lvlt: u"pH is limiting: soil exhibits aluminum and manganese toxicity."}),
+        (5.5, {b: bn, lvl: lvlm, lvlt: u"pH is somewhat limiting."}),
+        (6.5, {b: bg, lvl: lvlo, lvlt: u"Optimal pH for good plant productivity."}),
+        (7.5, {b: bh, lvl: lvlh, lvlt: u"pH is not limiting. However, may be Fe, Mn, Zn deficiencies in sandy soils."}),
+        (8.5, {b: bh, lvl: lvlh, lvlt: u"pH is somewhat limiting (calcareous soil). Will likely observe Fe, Mn, Zn, deficiencies."}),
+        ('_', {b: bvh, lvl: lvlvh, lvlt: u"Severe pH limitations with sodium problems (sodic)"}),
+        ])
+
     results['ph_cacl'][v] = sample.get('ph_cacl2_sample_ph_cacl2', None)
+
+     # update badge levels
+    if results['ph_cacl'][v]:
+        results['ph_cacl'].update(level_in_range(results['ph_cacl'][v], ph_cacl_levels))
 
     # Δ pH
     try:
