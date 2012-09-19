@@ -172,7 +172,7 @@ def get_formhub_bulk_submission_url(project, is_registration=False):
     return u'%(user_url)s/bulk-submission' % data
 
 
-def submit_xml_forms_formhub(project, xforms=[], as_bulk=False):
+def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
 
     # allow single form parameter
     if not isinstance(xforms, list):
@@ -226,13 +226,21 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False):
     exception = ErrorMultipleUploadingDataToFormhub()
 
     formhub_submission_url = get_formhub_submission_url(project)
-    for form_xml in xforms:
+    for index, form_xml in enumerate(xforms):
         if not form_xml:
             continue
         try:
+            # add pictures & other attachments
+            try:
+                attached = attachments[index]
+            except:
+                attached = []
+
+            req_files = {'xml_submission_file': ('form.xml', form_xml)}
+            for num, attachment in enumerate(attached):
+                req_files.update({'form_attachment_%d' % num: attachment})
             req = requests.post(formhub_submission_url,
-                                files={'xml_submission_file': 
-                                       ('form.xml', form_xml)},
+                                files=req_files,
                                 timeout=FORMHUB_UPLOAD_TIMEOUT)
         except requests.exceptions.Timeout as e:
             exception.timeouts.append(e)
