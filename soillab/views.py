@@ -64,7 +64,7 @@ def sample_detail(request, sample_id):
     try:
         sample = bamboo_query(request.user.project,
                               query={'sample_id_sample_barcode_id': sample_id},
-                              first=True)
+                              last=True)
     except:
         raise Http404(u"Requested Sample (%(sample)s) does not exist." 
                       % {'sample': sample_id})
