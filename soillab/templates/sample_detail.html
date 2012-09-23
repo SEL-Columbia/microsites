@@ -72,7 +72,11 @@ $("tr.result-detail").click(function () {
 <h3>Soil Properties</h3>
 <table class="table table-striped sample-results">
 {% for result_id, result in results.iteritems %}
-<tr class='result-row' {% if result.level_text_verbose %}level_text_verbose="{{ result.level_text_verbose }}"{% endif %}><td>{{ result.name }}</td><td class='result_value'>{{ result.value|default_if_none:"n/a"|numberformat }}</td><td class='result_indic'>{% if result.badge %}<span class="badge badge-{{ result.badge }}">{{ result.level_text|upper }}</span>{% endif %}</td></tr>
+<tr class='result-row' {% if result.level_text_verbose %}level_text_verbose="{{ result.level_text_verbose }}"{% endif %}>
+    <td>{{ result.name }}{% if result.unit %}<small class='unit'>{{ result.unit }}</small>{% endif %}</td>
+    <td class='result_value'>{{ result.value|default_if_none:"n/a"|numberformat }}</td>
+    <td class='result_indic'>{% if result.badge %}<span class="badge badge-{{ result.badge }}">{{ result.level_text|upper }}</span>{% endif %}</td>
+</tr>
 {% endfor %}
 
 </table>

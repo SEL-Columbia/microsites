@@ -19,6 +19,7 @@ def soil_results(sample):
     b = 'badge'
     lvl = 'level_text'
     lvlt = 'level_text_verbose'
+    u = 'unit'
 
     lvlel = u"Extremely Low"
     lvlvl = u"Very Low"
@@ -41,18 +42,23 @@ def soil_results(sample):
     bb = 'inverse' # blank
     bno = None
 
+    udsm = u"deciS/m"
+    umgc3 = u"mg/㎤"
+    umgkg = u"mg/kg"
+    un = None
+
     # initialize the result dict for ordering.
     results = OrderedDict([
-        ('ec', {n: u"EC", v: 0, b: bno, lvl: lvlb}),
-        ('ph_water', {n: u"pH Water", v: 0, b: bno, lvl: lvlb}),
-        ('ph_cacl', {n: u"pH Salt", v: 0, b: bno, lvl: lvlb}),
-        ('delta_ph', {n: u"Δ pH", v: 0, b: bno, lvl: lvlb}),
-        ('soil_bulk_density', {n: u"Soil Bulk Density", v: 0, b: bno, lvl: lvlb}),
-        ('soil_moisture', {n: u"Soil Moisture at Sampling", v: 0, b: bno, lvl: lvlb}),
-        ('soil_nitrate', {n: u"Soil Nitrate", v: 0, b: bno, lvl: lvlb}),
-        ('soil_potassium', {n: u"Soil Potassium", v: 0, b: bno, lvl: lvlb}),
-        ('soil_phosphorus', {n: u"Soil Phosphorus", v: 0, b: bno, lvl: lvlb}),
-        ('soil_sulfate', {n: u"Soil Sulfate", v: 0, b: bno, lvl: lvlb}),
+        ('ec', {n: u"EC", v: 0, b: bno, lvl: lvlb, u: udsm}),
+        ('ph_water', {n: u"pH Water", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('ph_cacl', {n: u"pH Salt", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('delta_ph', {n: u"Δ pH", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('soil_bulk_density', {n: u"Soil Bulk Density", v: 0, b: bno, lvl: lvlb, u: umgc3}),
+        ('soil_moisture', {n: u"Soil Moisture at Sampling", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('soil_nitrate', {n: u"Soil Nitrate", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_potassium', {n: u"Soil Potassium", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_phosphorus', {n: u"Soil Phosphorus", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_sulfate', {n: u"Soil Sulfate", v: 0, b: bno, lvl: lvlb, u: umgkg}),
         # ('soil_organic_matter', {n: u"Soil Organic Matter", v: 0, b: bno, lvl: lvlb}),
     ])
 
@@ -61,7 +67,7 @@ def soil_results(sample):
     #
     soil_units = {
         'microseimens_per_cm': 1000,
-        'parts_per_million': 640,
+        'parts_per_million': 1/500,
         'milliseimens_per_cm': 0.001,
         'decisiemens_per_meter': 1,
         'mmhos_per_cm': 1,
@@ -243,32 +249,27 @@ def soil_results(sample):
         ])
 
     try:
-        slope_low_spike_ppb = 6 / sample.get('sulfur_analysis_blank_sulfur_vial_ppb', None)
+        slope_low_spike_ppb = 8 / sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None)
     except:
         slope_low_spike_ppb = None
 
     try:
-        slope_high_spike_ppm = 16 / sample.get('sulfur_analysis_high_spike_sulfur_analysis_vial_ppm', None)
+        slope_high_spike_ppm = 16 / sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None)
     except:
         slope_high_spike_ppm = None
 
     try:
-        soil_sulfur_ppb =  (
-                            ((sample.get('sulfur_ppb_meter_sample_sulfur_ppb_meter', None) * slope_low_spike_ppb)
-                              - sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None))
-                            * (sample.get('sulfur_analysis_sample_sulfur_analysis_vial_water', None) / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
-                            * (30 / (1 - (percent_moisture_by_weight * 15)))
-                           )
+        soil_sulfur_ppb = (((sample.get('sulfur_ppb_meter_sample_sulfur_ppb_meter', None) * slope_low_spike_ppb)
+                            / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
+                           * (30 / (1 - (percent_moisture_by_weight * 15))))
     except:
         soil_sulfur_ppb = None
 
     try:
         soil_sulfur_ppm = (
                             ((sample.get('sulfur_ppm_meter_sample_sulfur_ppm_meter', None) * slope_high_spike_ppm)
-                              - sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None))
-                            * (sample.get('sulfur_analysis_sample_sulfur_analysis_vial_water', None) / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
-                            * (30 / (1 - (percent_moisture_by_weight * 15)))
-                           )
+                              / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
+                             * (30 / (1 - (percent_moisture_by_weight * 15))))
     except:
         soil_sulfur_ppm = None
 

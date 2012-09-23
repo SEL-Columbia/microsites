@@ -219,3 +219,11 @@ ul#recommendations li p {
 .result-detail td {
     padding-left: 1.5em;
 }
+
+.unit {
+    margin-left: 0.2em;
+    font-size: 80%;
+    color: #888888;
+    font-weight: normal;
+    font-style: italic;
+}
