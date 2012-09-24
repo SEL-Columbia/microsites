@@ -82,6 +82,10 @@ def dump_json(obj, default=None):
 def bamboo_datetime_hook(obj):
     if isinstance(obj, dict) and obj.has_key(u'$date'):
         return datetime.datetime.fromtimestamp(int(obj.get(u'$date')) / 1000)
+    if isinstance(obj, dict):
+        for k, v in obj.iteritems():
+            if isinstance(v, basestring) and v == u'null':
+                obj[k] = None
     return obj
 
 

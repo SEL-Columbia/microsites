@@ -71,8 +71,6 @@ def sample_detail(request, sample_id):
 
     results = soil_results(sample)
 
-    from pprint import pprint as pp ; pp(sample)
-
     context.update({'sample': sample,
                     'results': results})
     
