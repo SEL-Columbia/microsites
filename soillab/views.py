@@ -69,9 +69,12 @@ def sample_detail(request, sample_id):
         raise Http404(u"Requested Sample (%(sample)s) does not exist." 
                       % {'sample': sample_id})
 
+    from collections import OrderedDict
+    sorted_sample = OrderedDict([(key, sample[key]) for key in sorted(sample.iterkeys())])
+
     results = soil_results(sample)
 
-    context.update({'sample': sample,
+    context.update({'sample': sorted_sample,
                     'results': results})
     
     return render(request, 'sample_detail.html', context)
