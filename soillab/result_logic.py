@@ -67,7 +67,7 @@ def soil_results(sample):
     #
     soil_units = {
         'microseimens_per_cm': 1000,
-        'parts_per_million': 1/500,
+        'parts_per_million': 1.0/500,
         'milliseimens_per_cm': 0.001,
         'decisiemens_per_meter': 1,
         'mmhos_per_cm': 1,
@@ -84,12 +84,12 @@ def soil_results(sample):
         ])
 
     try:
-        soil_ec = sample.get('ec_sample_ec', None) - sample.get('ec_water_ec', None)
+        soil_ec = sample.get('ec_sample_ec', None) - float(sample.get('ec_blank_ec', None))
     except:
         soil_ec = None
 
     try:
-        results['ec'][v] = soil_ec * soil_units.get('ec_units', 1)
+        results['ec'][v] = soil_ec * soil_units.get(sample.get('ec_units', None), None)
     except:
         results['ec'][v] = None
 
@@ -145,7 +145,7 @@ def soil_results(sample):
     # soil moisture at sampling
     #
     try:
-        results['soil_moisture'][v] = (sample.get('sample_id_sample_automated_soil_moisture') 
+        results['soil_moisture'][v] = (sample.get('sample_id_sample_automated_soil_moisture', None) 
                                        / results['soil_bulk_density'][v])
     except:
         results['soil_moisture'][v] = None
