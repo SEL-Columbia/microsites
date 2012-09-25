@@ -157,13 +157,11 @@ def soil_results(sample):
         results['soil_moisture'][v] = (float(sample.get('sample_id_sample_automated_soil_moisture', None)) 
                                        / float(results['soil_bulk_density'][v]))
     except:
-        raise
         results['soil_moisture'][v] = None
 
     try:
         percent_moisture_by_weight = float(results['soil_moisture'][v])
     except:
-        raise
         percent_moisture_by_weight = None
 
     #
