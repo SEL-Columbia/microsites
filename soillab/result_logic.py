@@ -66,11 +66,11 @@ def soil_results(sample):
     # EC GROUP
     #
     soil_units = {
-        'microseimens_per_cm': 1000,
+        'microseimens_per_cm': 1000.0,
         'parts_per_million': 1.0/500,
         'milliseimens_per_cm': 0.001,
-        'decisiemens_per_meter': 1,
-        'mmhos_per_cm': 1,
+        'decisiemens_per_meter': 1.0,
+        'mmhos_per_cm': 1.0,
     }
 
     ec_levels = OrderedDict([
@@ -84,12 +84,12 @@ def soil_results(sample):
         ])
 
     try:
-        soil_ec = sample.get('ec_sample_ec', None) - float(sample.get('ec_blank_ec', None))
+        soil_ec = float(sample.get('ec_sample_ec', None)) - float(sample.get('ec_blank_ec', None))
     except:
         soil_ec = None
 
     try:
-        results['ec'][v] = soil_ec * soil_units.get(sample.get('ec_units', None), None)
+        results['ec'][v] = soil_ec * float(soil_units.get(sample.get('ec_units', None), None))
     except:
         results['ec'][v] = None
 
@@ -100,7 +100,10 @@ def soil_results(sample):
     #
     # pH H2O
     #
-    results['ph_water'][v] = sample.get('ph_water_sample_ph_water', None)
+    try:
+        results['ph_water'][v] = float(sample.get('ph_water_sample_ph_water', None))
+    except:
+        results['ph_water'][v] = None
 
     #
     # pH CaCl
@@ -115,7 +118,10 @@ def soil_results(sample):
         ('_', {b: bvh, lvl: lvlvh, lvlt: u"Severe pH limitations with sodium problems (sodic)"}),
         ])
 
-    results['ph_cacl'][v] = sample.get('ph_cacl2_sample_ph_cacl2', None)
+    try:
+        results['ph_cacl'][v] = float(sample.get('ph_cacl2_sample_ph_cacl2', None))
+    except:
+        results['ph_cacl'][v] = None
 
      # update badge levels
     if results['ph_cacl'][v]:
@@ -125,8 +131,8 @@ def soil_results(sample):
     # Δ pH
     #
     try:
-        results['delta_ph'][v] = (sample.get('ph_water_sample_ph_water') 
-                                  - sample.get('ph_cacl2_sample_ph_cacl2'))
+        results['delta_ph'][v] = (float(sample.get('ph_water_sample_ph_water')) 
+                                  - float(sample.get('ph_cacl2_sample_ph_cacl2')))
     except:
         results['delta_ph'][v] = None
 
@@ -139,18 +145,26 @@ def soil_results(sample):
         'medium': 1.2,
         'fine': 1.0
     }
-    results['soil_bulk_density'][v] = soil_densities.get(sample.get('sample_id_sample_soil_texture', None), None)
+    try:
+        results['soil_bulk_density'][v] = float(soil_densities.get(sample.get('sample_id_sample_soil_texture', None), None))
+    except:
+        results['soil_bulk_density'][v] = None
 
     #
     # soil moisture at sampling
     #
     try:
-        results['soil_moisture'][v] = (sample.get('sample_id_sample_automated_soil_moisture', None) 
-                                       / results['soil_bulk_density'][v])
+        results['soil_moisture'][v] = (float(sample.get('sample_id_sample_automated_soil_moisture', None)) 
+                                       / float(results['soil_bulk_density'][v]))
     except:
+        raise
         results['soil_moisture'][v] = None
 
-    percent_moisture_by_weight = results['soil_moisture'][v]
+    try:
+        percent_moisture_by_weight = float(results['soil_moisture'][v])
+    except:
+        raise
+        percent_moisture_by_weight = None
 
     #
     # soil nitrate
@@ -166,9 +180,9 @@ def soil_results(sample):
 
     try:
         results['soil_nitrate'][v] = (
-            (sample.get('nitrate_sample_nitrate') 
-             - sample.get('nitrate_blank_nitrate')) 
-            * (30 / ((1 - percent_moisture_by_weight) * 15)) )
+            (float(sample.get('nitrate_sample_nitrate')) 
+             - float(sample.get('nitrate_blank_nitrate'))) 
+            * (30.0 / ((1.0 - float(percent_moisture_by_weight)) * 15.0)) )
     except:
         results['soil_nitrate'][v] = None
 
@@ -189,9 +203,9 @@ def soil_results(sample):
 
     try:
         results['soil_potassium'][v] = (
-            (sample.get('potassium_sample_potassium') 
-             - sample.get('potassium_blank_potassium')) 
-            * (30 / ((1 - percent_moisture_by_weight) * 15)) )
+            (float(sample.get('potassium_sample_potassium')) 
+             - float(sample.get('potassium_blank_potassium'))) 
+            * (30.0 / ((1.0 - float(percent_moisture_by_weight)) * 15.0)) )
     except:
         results['soil_potassium'][v] = None
 
@@ -211,19 +225,19 @@ def soil_results(sample):
         ])
 
     try:
-        soil_phosphorus_ppb = ((sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None) 
-                                - sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None))
-                               * (10 / 2) 
-                               * ( 30 / 
-                                  ((1 - percent_moisture_by_weight) * 15)) )
+        soil_phosphorus_ppb = ((float(sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None)) 
+                                - float(sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None)))
+                               * (10.0 / 2.0) 
+                               * ( 30.0 / 
+                                  ((1.0 - float(percent_moisture_by_weight)) * 15.0)) )
     except:
         soil_phosphorus_ppb = None
 
     try:
-        soil_phosphorus_ppm = ((sample.get('phosphorus_ppm_meter_sample_phosphorus_ppm_meter', None)
-                                - sample.get('phosphorus_ppm_meter_blank_phosphorus_ppm_meter'))
-                               * (10 / 2) 
-                               * (30 / ((1 - percent_moisture_by_weight) * 15))
+        soil_phosphorus_ppm = ((float(sample.get('phosphorus_ppm_meter_sample_phosphorus_ppm_meter', None))
+                                - float(sample.get('phosphorus_ppm_meter_blank_phosphorus_ppm_meter')))
+                               * (10.0 / 2.0) 
+                               * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
                                * (30.97 / 94.97))
     except:
         soil_phosphorus_ppm = None
@@ -249,27 +263,27 @@ def soil_results(sample):
         ])
 
     try:
-        slope_low_spike_ppb = 8 / sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None)
+        slope_low_spike_ppb = 8.0 / float(sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None))
     except:
         slope_low_spike_ppb = None
 
     try:
-        slope_high_spike_ppm = 16 / sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None)
+        slope_high_spike_ppm = 16.0 / float(sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None))
     except:
         slope_high_spike_ppm = None
 
     try:
-        soil_sulfur_ppb = (((sample.get('sulfur_ppb_meter_sample_sulfur_ppb_meter', None) * slope_low_spike_ppb)
-                            / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
-                           * (30 / ((1 - percent_moisture_by_weight) * 15)))
+        soil_sulfur_ppb = (((float(sample.get('sulfur_ppb_meter_sample_sulfur_ppb_meter', None)) * float(slope_low_spike_ppb))
+                            / float(sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None)))
+                           * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0)))
     except:
         soil_sulfur_ppb = None
 
     try:
         soil_sulfur_ppm = (
-                            ((sample.get('sulfur_ppm_meter_sample_sulfur_ppm_meter', None) * slope_high_spike_ppm)
-                              / sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None))
-                             * (30 / ((1 - percent_moisture_by_weight) * 15)))
+                            ((float(sample.get('sulfur_ppm_meter_sample_sulfur_ppm_meter', None)) * float(slope_high_spike_ppm))
+                              / float(sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None)))
+                             * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0)))
     except:
         soil_sulfur_ppm = None
 
