@@ -3,18 +3,20 @@
 import json
 
 import requests
+from pybamboo import PyBamboo, ErrorParsingBambooData
 
 from microsite.models import Option
 from microsite.formhub import get_formhub_form_public_api_url
-from microsite.utils import get_option, load_json, dump_json
+from microsite.utils import get_option, load_json
 
 
-class ErrorRetrievingBambooData(IOError):
-    pass
+class Bamboo(PyBamboo):
 
-
-class ErrorParsingBambooData(ValueError):
-    pass
+    def _safe_json_loads(self, req):
+        try:
+            return load_json(req.text)
+        except:
+            raise ErrorParsingBambooData
 
 
 def getset_bamboo_dataset(project, is_registration=False):
@@ -38,14 +40,21 @@ def getset_bamboo_dataset(project, is_registration=False):
     return True
 
 
-def get_bamboo_datasets_url(project):
-
-    data = {'bamboo_url': get_bamboo_url(project)}
-    return u'%(bamboo_url)s/datasets' % data
-
-
 def get_bamboo_url(project):
     return get_option(project, 'bamboo_uri')
+
+
+def get_bamboo_dataset_id(project, is_registration=False):
+
+    return (get_bamboo_ids_dataset(project) if is_registration 
+                                         else get_bamboo_dataset(project))
+
+
+def get_bamboo_dataset_url(project, is_registration=False):
+
+    dataset = get_bamboo_dataset_id(project, is_registration)
+    url = get_bamboo_url(project)
+    return (url, dataset)
 
 
 def get_bamboo_dataset(project):
@@ -56,66 +65,10 @@ def get_bamboo_ids_dataset(project):
     return get_option(project, 'bamboo_ids_dataset')
 
 
-def get_bamboo_dataset_url(project, is_registration=False):
-
-    dataset = (get_bamboo_ids_dataset(project) if is_registration 
-                                         else get_bamboo_dataset(project))
-    data = {'bamboo_url': get_bamboo_url(project),
-            'dataset': dataset}
-    return u'%(bamboo_url)s/datasets/%(dataset)s' % data
-
-
-def get_bamboo_dataset_summary_url(project, is_registration=False):
-    data = {'dataset_url': get_bamboo_dataset_url(project, is_registration)}
-    return u'%(dataset_url)s/summary' % data
-
-
-def get_bamboo_dataset_info_url(project, is_registration=False):
-    data = {'dataset_url': get_bamboo_dataset_url(project, is_registration)}
-    return u'%(dataset_url)s/info' % data
-
-
-def get_bamboo_dataset_calculations_url(project, is_registration=False):
-    
-    dataset = (get_bamboo_ids_dataset(project) if is_registration 
-                                         else get_bamboo_dataset(project))
-    data = {'bamboo_url': get_bamboo_url(project),
-            'dataset': dataset}
-    return u'%(bamboo_url)s/calculations/%(dataset)s' % data
-
-
 def count_submissions(project, field, method='count', is_registration=False):
-    ''' Number of submissions for a given field.
 
-    method is one of: '25%', '50%', '75%', 'count' (default),
-                      'max', 'mean', 'min', 'std' '''
-
-    data = {'bamboo_url': Option.objects.get(key='bamboo_uri',
-                                             project=project).value,
-            'dataset': Option.objects.get(key='bamboo_dataset',
-                                          project=project).value,}
-
-    if not all(data):
-        return False
-
-    url = get_bamboo_dataset_summary_url(project, is_registration)
-    
-    req = requests.get(url)
-    if not req.status_code in (200, 202):
-        raise ErrorRetrievingBambooData
-
-    try:
-        response = json.loads(req.text)
-
-        value = response.get(field).get('summary')
-        if method in value:
-            return float(value.get(method))
-        else:
-            return sum([int(relval) for relval in value.values()])
-
-    except:
-        raise ErrorRetrievingBambooData
-    return 0
+    url, dataset_id = get_bamboo_dataset_url(project, is_registration)
+    return Bamboo(url).count_submissions(dataset_id, field, method)
 
 
 def bamboo_query(project,
@@ -125,65 +78,13 @@ def bamboo_query(project,
                  first=False, last=False,
                  print_url=False):
 
-    params = {
-        'select': select,
-        'query': query,
-        'group': group
-    }
-
-    # remove key with no value
-    for key, value in params.items():
-        if not value:
-            params.pop(key)
-        else:
-            if isinstance(value, dict):
-                params[key] = dump_json(value)
-
-    if as_summary:
-        url = get_bamboo_dataset_summary_url(project, is_registration)
-    else:
-        url = get_bamboo_dataset_url(project, is_registration)
-
-    req = requests.get(url, params=params)
-
-    # debugging
-    if print_url:
-        print(req.url)
-
-    if not req.status_code in (200, 202):
-        raise ErrorRetrievingBambooData(u"%d Status Code received."
-                                        % req.status_code)
-
-    try:
-        response = load_json(req.text)
-        if last:
-            return response[-1]
-        elif first:
-            return response[0]
-        else:
-            return response 
-    except Exception as e:
-        print(req.text)
-        raise ErrorParsingBambooData(e.message)
+    url, dataset_id = get_bamboo_dataset_url(project, is_registration)
+    return Bamboo(url).query(dataset_id, select, query, group,
+                               as_summary, first, last)
 
 
 def bamboo_store_calculation(project, formula_name, formula,
                              is_registration=False):
 
-    url = get_bamboo_dataset_calculations_url(project, is_registration)
-
-    params = {'name': formula_name,
-              'formula': formula}
-
-    req = requests.post(url, params=params)
-
-    if not req.status_code in (200, 201, 202):
-        raise ErrorRetrievingBambooData(u"%d Status Code received."
-                                        % req.status_code)
-
-    try:
-        return load_json(req.text)
-    except Exception as e:
-        print(req.text)
-        raise ErrorParsingBambooData(e.message)
-
+    url, dataset_id = get_bamboo_dataset_url(project, is_registration)
+    return Bamboo(url).store_calculation(dataset_id, formula_name, formula)

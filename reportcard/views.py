@@ -1,7 +1,7 @@
 
-from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger
+from pybamboo import ErrorRetrievingBambooData
 
 from constants import (REPORTS_AGE_GROUPS, 
                        REPORTS_READING_LEVELS, REPORTS_NUMERACY_LEVELS)
@@ -9,8 +9,7 @@ from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.decorators import project_required
 from microsite.barcode import (build_urlid_with,
                                short_id_from, detailed_id_dict, b64_qrcode)
-from microsite.bamboo import (ErrorRetrievingBambooData,
-                              count_submissions, bamboo_query)
+from microsite.bamboo import count_submissions, bamboo_query
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_public_api_url,
                                get_formhub_form_datacsv_url,

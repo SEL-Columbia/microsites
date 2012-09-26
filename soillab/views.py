@@ -18,7 +18,7 @@ from microsite.barcode import b64_qrcode
 from microsite.formhub import (submit_xml_forms_formhub,
                                ErrorUploadingDataToFormhub,
                                ErrorMultipleUploadingDataToFormhub)
-from microsite.bamboo import (bamboo_query)
+from microsite.bamboo import bamboo_query
 
 from soillab.spid_ssid import generate_ssids
 from soillab.result_logic import soil_results
@@ -71,6 +71,8 @@ def sample_detail(request, sample_id):
 
     from collections import OrderedDict
     sorted_sample = OrderedDict([(key, sample[key]) for key in sorted(sample.iterkeys())])
+
+    from pprint import pprint as pp ; pp(sample)
 
     results = soil_results(sample)
 
