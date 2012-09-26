@@ -159,6 +159,39 @@ def soil_results(sample):
     except:
         results['soil_moisture'][v] = None
 
+    # select a soil moisture if not provided by measurement
+    soil_moisture = None
+    if not results['soil_moisture'][v]:
+        texture = sample.get('sample_id_sample_soil_texture', None)
+        moisture = sample.get('sample_id_sample_soil_moisture', None)
+        if texture and moisture:
+            if texture == 'coarse' and moisture == 'field_capacity':
+                soil_moisture = 0.115
+            elif texture == 'coarse' and moisture == 'half_field_capacity':
+                soil_moisture = 0.078
+            elif texture == 'coarse' and moisture == 'wilting_point':
+                soil_moisture = 0.004
+            elif texture == 'moderately_coarse' and moisture == 'field_capacity':
+                soil_moisture = 0.185
+            elif texture == 'moderately_coarse' and moisture == 'half_field_capacity':
+                soil_moisture = 0.123
+            elif texture == 'moderately_coarse' and moisture == 'wilting_point':
+                soil_moisture = 0.06
+            elif texture == 'medium' and moisture == 'field_capacity':
+                soil_moisture = 0.250
+            elif texture == 'medium' and moisture == 'half_field_capacity':
+                soil_moisture = 0.175
+            elif texture == 'medium' and moisture == 'wilting_point':
+                soil_moisture = 0.10
+            elif texture == 'fine' and moisture == 'field_capacity':
+                soil_moisture = 0.317
+            elif texture == 'fine' and moisture == 'half_field_capacity':
+                soil_moisture = 0.233
+            elif texture == 'fine' and moisture == 'wilting_point':
+                soil_moisture = 0.15
+        if soil_moisture:
+            results['soil_moisture'][v] = soil_moisture
+
     try:
         percent_moisture_by_weight = float(results['soil_moisture'][v])
     except:
