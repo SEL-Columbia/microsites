@@ -171,24 +171,32 @@ def soil_results(sample):
                 soil_moisture = 0.078
             elif texture == 'coarse' and moisture == 'wilting_point':
                 soil_moisture = 0.004
+            elif texture == 'coarse' and moisture == 'air_dry':
+                soil_moisture = 0.002
             elif texture == 'moderately_coarse' and moisture == 'field_capacity':
                 soil_moisture = 0.185
             elif texture == 'moderately_coarse' and moisture == 'half_field_capacity':
                 soil_moisture = 0.123
             elif texture == 'moderately_coarse' and moisture == 'wilting_point':
                 soil_moisture = 0.06
+            elif texture == 'moderately_coarse' and moisture == 'air_dry':
+                soil_moisture = 0.03
             elif texture == 'medium' and moisture == 'field_capacity':
                 soil_moisture = 0.250
             elif texture == 'medium' and moisture == 'half_field_capacity':
                 soil_moisture = 0.175
             elif texture == 'medium' and moisture == 'wilting_point':
                 soil_moisture = 0.10
+            elif texture == 'medium' and moisture == 'air_dry':
+                soil_moisture = 0.05
             elif texture == 'fine' and moisture == 'field_capacity':
                 soil_moisture = 0.317
             elif texture == 'fine' and moisture == 'half_field_capacity':
                 soil_moisture = 0.233
             elif texture == 'fine' and moisture == 'wilting_point':
                 soil_moisture = 0.15
+            elif texture == 'fine' and moisture == 'air_dry':
+                soil_moisture = 0.075
         if soil_moisture:
             results['soil_moisture'][v] = soil_moisture
 
@@ -260,7 +268,7 @@ def soil_results(sample):
                                 - float(sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None)))
                                * (10.0 / 2.0) 
                                * ( 30.0 / 
-                                  ((1.0 - float(percent_moisture_by_weight)) * 15.0)) )
+                                  ((1.0 - float(percent_moisture_by_weight)) * 15.0)) ) * 1000
     except:
         soil_phosphorus_ppb = None
 
@@ -294,12 +302,12 @@ def soil_results(sample):
         ])
 
     try:
-        slope_low_spike_ppb = 8.0 / float(sample.get('sulfur_ppb_meter_blank_sulfur_ppb_meter', None))
+        slope_low_spike_ppb = 8.0 / float(sample.get('sulfur_ppb_meter_low_spike_sulfur_analysis_vial_ppb', None))
     except:
         slope_low_spike_ppb = None
 
     try:
-        slope_high_spike_ppm = 16.0 / float(sample.get('sulfur_ppm_meter_blank_sulfur_ppm_meter', None))
+        slope_high_spike_ppm = 16.0 / float(sample.get('sulfur_ppm_meter_high_spike_sulfur_analysis_vial_ppm', None))
     except:
         slope_high_spike_ppm = None
 
