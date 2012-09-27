@@ -94,7 +94,7 @@ def soil_results(sample):
         results['ec'][v] = None
 
     # update badge levels
-    if results['ec'][v]:
+    if not results['ec'][v] is None:
         results['ec'].update(level_in_range(results['ec'][v], ec_levels))
 
     #
@@ -124,7 +124,7 @@ def soil_results(sample):
         results['ph_cacl'][v] = None
 
      # update badge levels
-    if results['ph_cacl'][v]:
+    if not results['ph_cacl'][v] is None:
         results['ph_cacl'].update(level_in_range(results['ph_cacl'][v], ph_cacl_levels))
 
     #
@@ -161,7 +161,7 @@ def soil_results(sample):
 
     # select a soil moisture if not provided by measurement
     soil_moisture = None
-    if not results['soil_moisture'][v]:
+    if results['soil_moisture'][v] is None:
         texture = sample.get('sample_id_sample_soil_texture', None)
         moisture = sample.get('sample_id_sample_soil_moisture', None)
         if texture and moisture:
@@ -197,7 +197,7 @@ def soil_results(sample):
                 soil_moisture = 0.15
             elif texture == 'fine' and moisture == 'air_dry':
                 soil_moisture = 0.075
-        if soil_moisture:
+        if soil_moisture is not None:
             results['soil_moisture'][v] = soil_moisture
 
     try:
@@ -226,7 +226,7 @@ def soil_results(sample):
         results['soil_nitrate'][v] = None
 
      # update badge levels
-    if results['soil_nitrate'][v]:
+    if results['soil_nitrate'][v] is not None:
         results['soil_nitrate'].update(level_in_range(results['soil_nitrate'][v], nitrate_fertility_levels))
 
     #
@@ -249,7 +249,7 @@ def soil_results(sample):
         results['soil_potassium'][v] = None
 
      # update badge levels
-    if results['soil_potassium'][v]:
+    if results['soil_potassium'][v] is not None:
         results['soil_potassium'].update(level_in_range(results['soil_potassium'][v], potassium_fertility_levels))
 
     #
@@ -288,7 +288,7 @@ def soil_results(sample):
         results['soil_phosphorus'][v] = soil_phosphorus_ppb
 
      # update badge levels
-    if results['soil_phosphorus'][v]:
+    if results['soil_phosphorus'][v] is not None:
         results['soil_phosphorus'].update(level_in_range(results['soil_phosphorus'][v], phosphorus_fertility_levels))
 
     #
@@ -333,7 +333,7 @@ def soil_results(sample):
         results['soil_sulfate'][v] = soil_sulfur_ppb
 
      # update badge levels
-    if results['soil_sulfate'][v]:
+    if results['soil_sulfate'][v] is not None:
         results['soil_sulfate'].update(level_in_range(results['soil_sulfate'][v], sulfate_fertility_levels))
 
     #
