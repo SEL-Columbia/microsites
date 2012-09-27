@@ -313,7 +313,7 @@ def soil_results(sample):
 
     try:
         soil_sulfur_ppb = (((float(sample.get('sulfur_ppb_meter_sample_sulfur_ppb_meter', None)) * float(slope_low_spike_ppb))
-                            / float(sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None)))
+                            / float(sample.get('s_spike_and_dilution_sample_sulfur_analysis_vial_extract', None)))
                            * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0)))
     except:
         soil_sulfur_ppb = None
@@ -321,7 +321,7 @@ def soil_results(sample):
     try:
         soil_sulfur_ppm = (
                             ((float(sample.get('sulfur_ppm_meter_sample_sulfur_ppm_meter', None)) * float(slope_high_spike_ppm))
-                              / float(sample.get('sulfur_analysis_sample_sulfur_analysis_vial_extract', None)))
+                              / float(sample.get('s_spike_and_dilution_sample_sulfur_analysis_vial_extract', None)))
                              * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0)))
     except:
         soil_sulfur_ppm = None
