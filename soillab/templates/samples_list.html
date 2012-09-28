@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load soillab %}
 
 {% block pageclass %}nomargin home{% endblock %}
 
@@ -20,7 +21,7 @@
 </div>
 <ul id="mainlist">
     {% for sample in samples %}
-    <li><a href="{% url sample sample.sample_id_sample_manual_id %}"><strong>{{ sample.single_letter|upper }}. sample</strong>, {{ sample.sample_id_sample_manual_id }}</a></li>
+    <li><a href="{% url sample sample|soilID %}"><strong>{{ sample.single_letter|upper }}. sample</strong>, {{ sample|soilID }}</a></li>
     {% endfor %}
 </ul>
 {% include 'pagination.html' with paginator=samples %}
