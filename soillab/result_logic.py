@@ -66,9 +66,9 @@ def soil_results(sample):
     # EC GROUP
     #
     soil_units = {
-        'microseimens_per_cm': 1000.0,
+        'microseimens_per_cm': 0.001,
         'parts_per_million': 1.0/500,
-        'milliseimens_per_cm': 0.001,
+        'milliseimens_per_cm': 1.0,
         'decisiemens_per_meter': 1.0,
         'mmhos_per_cm': 1.0,
     }
