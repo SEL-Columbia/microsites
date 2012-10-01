@@ -84,7 +84,7 @@ def bamboo_datetime_hook(obj):
         return datetime.datetime.fromtimestamp(int(obj.get(u'$date')) / 1000)
     if isinstance(obj, dict):
         for k, v in obj.iteritems():
-            if isinstance(v, basestring) and v == u'null':
+            if isinstance(v, basestring) and v in (u'null', u'n/a'):
                 obj[k] = None
     return obj
 

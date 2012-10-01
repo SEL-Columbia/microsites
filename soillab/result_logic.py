@@ -159,6 +159,8 @@ def soil_results(sample):
     #
     try:
         automated_soil_moisture = float(sample.get('sample_id_sample_automated_soil_moisture', None))
+        if automated_soil_moisture > 1.0:
+            automated_soil_moisture = automated_soil_moisture / 100.0
         soil_bulk_density = float(results['soil_bulk_density'][v])
         results['soil_moisture'][v] = automated_soil_moisture / soil_bulk_density
     except:
