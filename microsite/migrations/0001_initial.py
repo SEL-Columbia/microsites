@@ -18,7 +18,8 @@ class Migration(SchemaMigration):
 
         # Adding model 'Option'
         db.create_table('microsite_option', (
-            ('key', self.gf('django.db.models.fields.CharField')(max_length=75, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('key', self.gf('django.db.models.fields.CharField')(max_length=75)),
             ('json_value', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=70, null=True, blank=True)),
             ('project', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='options', null=True, to=orm['microsite.Project'])),
@@ -27,6 +28,19 @@ class Migration(SchemaMigration):
 
         # Adding unique constraint on 'Option', fields ['key', 'project']
         db.create_unique('microsite_option', ['key', 'project_id'])
+
+        # Adding model 'KeyNamePair'
+        db.create_table('microsite_keynamepair', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('project', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['microsite.Project'])),
+            ('namespace', self.gf('django.db.models.fields.SlugField')(max_length=75)),
+            ('key', self.gf('django.db.models.fields.SlugField')(max_length=200)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=70, null=True, blank=True)),
+        ))
+        db.send_create_signal('microsite', ['KeyNamePair'])
+
+        # Adding unique constraint on 'KeyNamePair', fields ['project', 'namespace', 'key']
+        db.create_unique('microsite_keynamepair', ['project_id', 'namespace', 'key'])
 
         # Adding model 'MicrositeUser'
         db.create_table('microsite_micrositeuser', (
@@ -38,6 +52,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Removing unique constraint on 'KeyNamePair', fields ['project', 'namespace', 'key']
+        db.delete_unique('microsite_keynamepair', ['project_id', 'namespace', 'key'])
+
         # Removing unique constraint on 'Option', fields ['key', 'project']
         db.delete_unique('microsite_option', ['key', 'project_id'])
 
@@ -46,6 +63,9 @@ class Migration(SchemaMigration):
 
         # Deleting model 'Option'
         db.delete_table('microsite_option')
+
+        # Deleting model 'KeyNamePair'
+        db.delete_table('microsite_keynamepair')
 
         # Deleting model 'MicrositeUser'
         db.delete_table('microsite_micrositeuser')
@@ -88,6 +108,14 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
+        'microsite.keynamepair': {
+            'Meta': {'unique_together': "(('project', 'namespace', 'key'),)", 'object_name': 'KeyNamePair'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'key': ('django.db.models.fields.SlugField', [], {'max_length': '200'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '70', 'null': 'True', 'blank': 'True'}),
+            'namespace': ('django.db.models.fields.SlugField', [], {'max_length': '75'}),
+            'project': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['microsite.Project']"})
+        },
         'microsite.micrositeuser': {
             'Meta': {'object_name': 'MicrositeUser'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -96,8 +124,9 @@ class Migration(SchemaMigration):
         },
         'microsite.option': {
             'Meta': {'unique_together': "(('key', 'project'),)", 'object_name': 'Option'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'json_value': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'key': ('django.db.models.fields.CharField', [], {'max_length': '75', 'primary_key': 'True'}),
+            'key': ('django.db.models.fields.CharField', [], {'max_length': '75'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '70', 'null': 'True', 'blank': 'True'}),
             'project': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'options'", 'null': 'True', 'to': "orm['microsite.Project']"})
         },

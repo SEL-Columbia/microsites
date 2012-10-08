@@ -16,7 +16,11 @@
 </thead>
 <tbody>
 {% for form in forms %}
-<tr><td>{{ form.name.value }}<input type="hidden" name="{{ form.key.value }}-key" value="{{ form.key.value }}" /><input type="hidden" name="{{ form.key.value }}-name" value="{{ form.name.value }}" /></td><td{% if form.errors.json_value %} class="alert alert-error"{% endif %}>{{ form.json_value }}
+<tr><td>{{ form.name.value }}
+    <input type="hidden" name="{{ form.key.value }}-project" value="{{ form.project.value }}" />
+    <input type="hidden" name="{{ form.key.value }}-key" value="{{ form.key.value }}" />
+    <input type="hidden" name="{{ form.key.value }}-name" value="{{ form.name.value }}" />
+    </td><td{% if form.errors.json_value %} class="alert alert-error"{% endif %}>{{ form.json_value }}
 {% if form.errors.json_value %}{% for error in form.errors.json_value %}{{ error }}<br />{% endfor %}</p>{% endif %}</td></tr>
 {% endfor %}
 </tbody>

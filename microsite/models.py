@@ -33,12 +33,15 @@ def add_default_options(sender, instance, created, **kwargs):
             ('formhub_form', u"formhub Form slug for data", ''),
             ('formhub_ids_user', u"formhub User owning form for IDs", ''),
             ('formhub_ids_form', u"formhub Form slug for IDs", '')]
-        for fixture in fixtures:
-            option = Option(key=fixture[0],
-                            name=fixture[1],
-                            project=instance)
-            option.value = fixture[2]
-            option.save()
+        for key, name, value in fixtures:
+            try:
+                option = Option.objects.create(key=key,
+                                               name=name,
+                                               project=instance)
+                option.value = value
+                option.save()
+            except:
+                raise
 
 
 class Option(models.Model):
@@ -49,7 +52,7 @@ class Option(models.Model):
         verbose_name_plural = _(u"Options")
         unique_together = (('key', 'project',),)
 
-    key = models.CharField(max_length=75, primary_key=True,
+    key = models.CharField(max_length=75,
                            verbose_name=_(u"Key"))
     json_value = models.TextField(blank=True, null=True,
                                   verbose_name=_(u"Value"),

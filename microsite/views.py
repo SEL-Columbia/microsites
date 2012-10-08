@@ -41,8 +41,19 @@ class OptionForm(forms.ModelForm):
 
     class Meta:
         model = Option
-        hidden = ('key', 'name')
-        exclude = ('project',)
+        hidden = ('key', 'name', 'project')
+        # exclude = ()
+
+    def __init__(self, *args, **kwargs):
+        if kwargs.has_key('project'):
+            self._project = kwargs.pop('project')
+        super(OptionForm, self).__init__(*args, **kwargs)
+
+    def clean_project(self):
+        if getattr(self, '_project', None):
+            return self._project
+        else:
+            return self.cleaned_data.get('project')
 
     json_value = forms.CharField(widget=JSONTextInput, required=False)
 
@@ -77,7 +88,10 @@ def options(request):
     context = {'category': 'options'}
 
     if request.method == "POST":
-        forms = [OptionForm(request.POST, prefix=str(option), instance=option) 
+        forms = [OptionForm(request.POST, 
+                            prefix=str(option),
+                            instance=option,
+                            project=request.user.project) 
                  for option
                  in Option.objects.filter(project=request.user.project)]
 
