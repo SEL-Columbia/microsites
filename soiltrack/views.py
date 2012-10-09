@@ -34,7 +34,7 @@ def idgen(request, nb_ids=DEFAULT_IDS):
     # for i in xrange(0, nb_ids):
     for ssid in generate_ssids('NG'):
         # this is a tuple of (ID, B64_QRPNG)
-        all_ids.append((ssid, b64_qrcode(ssid)))
+        all_ids.append((ssid, b64_qrcode(ssid, scale=1.8)))
 
     context.update({'generated_ids': all_ids})
 

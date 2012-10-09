@@ -15,6 +15,7 @@
 		<link rel="stylesheet" href="{{ STATIC_URL }}css/print.css" type="text/css" media="print" />
 		<link rel="stylesheet" href="{{ STATIC_URL }}bootstrap/css/bootstrap.min.css" type="text/css" media="screen,projection" />
         <link rel="stylesheet" href="{{ STATIC_URL }}css/microsite.css" type="text/css" media="screen,projection" />
+        {% block extra_head %}{% endblock %}
 		<link rel="index" title="" href="" />
 
 		<!--[if lt IE 9 ]>
