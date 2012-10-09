@@ -1,0 +1,24 @@
+
+body {
+    padding-top: 60px;
+}
+
+/* IDgen specifics */
+body.idgen * th.qrcol, body.idgen * td.qrcol{
+    width: 150px;
+}
+
+.table.hometable td, .table.hometable th {
+    vertical-align: middle;
+}
+
+ td.samplenb {
+    text-align: center;
+    font-weight: bold;
+    font-size: 120%;
+    width: 10%;
+ }
+
+ table.table.hometable tr td:last-child {
+    width: 40%;
+ }
