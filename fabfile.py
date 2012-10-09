@@ -45,6 +45,8 @@ def setup_env(deployment_name):
         env.project_directory, 'apache', 'reportcard.wsgi')
     env.wsgi_config_file = os.path.join(
         env.project_directory, 'apache', 'soillab.wsgi')
+    env.wsgi_config_file = os.path.join(
+        env.project_directory, 'apache', 'soiltrack.wsgi')
     env.pip_requirements_file = os.path.join(env.code_src, 'requirements.pip')
 
 
