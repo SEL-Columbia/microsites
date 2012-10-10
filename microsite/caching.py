@@ -17,7 +17,7 @@
 
 from functools import wraps
 
-DEFAULT_CACHE_EXPIRY = 300
+DEFAULT_CACHE_EXPIRY = 15 * 60  # 15mn
 NOT_FOUND = u'#not-found#'
 
 
@@ -25,7 +25,7 @@ class CacheNotAvailable(object):
     ''' Django cache-compatible class to fake cache code if no django
 
         Results in no caching at all '''
-    
+
     def get(self, *args, **kwargs):
         pass
 
@@ -46,7 +46,7 @@ class CacheNotAvailable(object):
 
     def delete_many(self, *args, **kwargs):
         pass
-    
+
     def clear(self, *args, **kwargs):
         pass
 
@@ -83,7 +83,7 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
             The key of the Django store in CACHES settings.
 
         decorator allows overloading the target function with cache-specific
-        arguments: cache(bool), use_cache(bool), 
+        arguments: cache(bool), use_cache(bool),
                    feed_cache(bool) and cache_expiry(int, seconds) '''
 
     def inner_decorator(target_method):
@@ -104,7 +104,7 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
                         cache_store = CacheNotAvailable()
 
             def extract_kwargs_cache(**kwargs):
-                ''' Analyze cache-related kwargs and seperate them from others 
+                ''' Analyze cache-related kwargs and seperate them from others
 
                     use_cache=False
                     Whether to retrieve data from cache (if available)
@@ -118,7 +118,7 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
 
                     cache=True
                     Sets both use_cache and feed_cache to True.
-                    Classic caching behavior. 
+                    Classic caching behavior.
 
                     Returns: use_cache, feed_cache, expiry, cleaned_kwargs '''
                 try:
@@ -145,8 +145,8 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
                 return use_cache, feed_cache, cache_expiry, kwargs
 
             # analyze cache-related keyword args.
-            use_cache, feed_cache, \
-            cache_expiry, kwargs = extract_kwargs_cache(**kwargs)
+            use_cache, feed_cache, cache_expiry, kwargs = \
+                extract_kwargs_cache(**kwargs)
 
             # if we don't want cache features, shortcut to target data.
             # also skip caching if:
@@ -155,10 +155,11 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
             if ((not use_cache and not feed_cache)
                 or not callable(id_func)
                 or isinstance(cache_store, CacheNotAvailable)):
+
                 return target_method(*args, **kwargs)
 
             # the cache key is compose of a prefix and an ident string
-            # in most cases, the prefix would be the HTTP method (GET, POST, ..)
+            # in most cases, the prefix would be the HTTP method (GET, POST,..)
             # and the ident string would be an URL
             ident = id_func(*args, **kwargs)
             cache_key = (u'%(id_prefix)s#%(ident)s'

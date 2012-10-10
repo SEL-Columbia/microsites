@@ -6,8 +6,9 @@ import requests
 from pybamboo import PyBamboo, ErrorParsingBambooData
 
 from microsite.models import Option
-from microsite.formhub import get_formhub_form_public_api_url
+from microsite.formhub import get_formhub_user_url, get_formhub_form
 from microsite.utils import get_option, load_json
+from microsite.caching import cache_result
 
 
 class Bamboo(PyBamboo):
@@ -18,13 +19,32 @@ class Bamboo(PyBamboo):
         except:
             raise ErrorParsingBambooData
 
+    def info_url(self, dataset_id):
+        return self.get_dataset_info_url(dataset_id)
+
+    @cache_result(id_func=info_url, store='bamboo')
+    def info(self, dataset_id):
+        req = requests.get(self.info_url(dataset_id))
+        self._check_response(req)
+        return self._safe_json_loads(req)
+
 
 def getset_bamboo_dataset(project, is_registration=False):
     ''' Retrieve bamboo dataset ID on formhub and update model '''
 
-    url = get_formhub_form_public_api_url(project, is_registration)
-
     key = 'bamboo_ids_dataset' if is_registration else 'bamboo_dataset'
+
+    form = get_formhub_form(project)
+
+    return raw_getset_bamboo_dataset(project, form, key, is_registration)
+
+
+def raw_getset_bamboo_dataset(project, form, key, is_registration=False):
+    ''' Retrieve bamboo dataset ID on formhub and update model '''
+
+    data = {'user_url': get_formhub_user_url(project, is_registration),
+            'form': form}
+    url = u'%(user_url)s/forms/%(form)s/public_api' % data
 
     req = requests.get(url)
     if not req.status_code in (200, 202):

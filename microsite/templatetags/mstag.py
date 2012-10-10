@@ -90,11 +90,22 @@ def strnum_french(numstr):
 
 @register.filter(name='percent')
 @stringfilter
-def format_percent(value, precision=2, french=True):
+def format_percent(value, precision=2, french=False):
     if value == u'n/a':
         return value
     try:
         return number_format(float(value) * 100, precision, french) + '%'
+    except:
+        return value
+
+
+@register.filter(name='percent_raw')
+@stringfilter
+def format_percent_raw(value):
+    if value == u'n/a':
+        return value
+    try:
+        return float(value) * 100
     except:
         return value
 
