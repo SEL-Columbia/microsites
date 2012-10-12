@@ -7,7 +7,7 @@
     Uses django cache framework to cache the result of any function.
 
     Usage:
-        @cache_result(id_func=lambda x, y: 'my_function')
+        @cache_result(ident=lambda x, y: 'my_function')
         def heavy_function(x, y):
             # heavy processing
             # network access
@@ -67,16 +67,12 @@ else:
     cache_stores = {}
 
 
-def cache_result(id_prefix='get', id_func=None, store='default'):
+def cache_result(ident=None, store='default'):
     ''' cache returned value of function if requested
 
         decorator takes two arguments:
-            * id_prefix='get'
-            What to prefix the cache key with. Usually, you'll want to use
-            the HTTP method or your target URL
-
-            * id_func
-            A callable returning the rest of the cache key.
+            * ident
+            A string or callable returning the rest of the cache key.
             Usually, you'll want to return the target URL
 
             * store='default'
@@ -150,10 +146,10 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
 
             # if we don't want cache features, shortcut to target data.
             # also skip caching if:
-            #   - there's no callable to find out identifier
+            #   - there's no identifier
             #   - caching is not available/configured
             if ((not use_cache and not feed_cache)
-                or not callable(id_func)
+                or not ident
                 or isinstance(cache_store, CacheNotAvailable)):
 
                 return target_method(*args, **kwargs)
@@ -161,9 +157,10 @@ def cache_result(id_prefix='get', id_func=None, store='default'):
             # the cache key is compose of a prefix and an ident string
             # in most cases, the prefix would be the HTTP method (GET, POST,..)
             # and the ident string would be an URL
-            ident = id_func(*args, **kwargs)
-            cache_key = (u'%(id_prefix)s#%(ident)s'
-                         % {'id_prefix': id_prefix.lower(), 'ident': ident})
+            if callable(ident):
+                cache_key = ident(*args, **kwargs)
+            else:
+                cache_key = ident
             value = NOT_FOUND
 
             # try to get the data from the cache

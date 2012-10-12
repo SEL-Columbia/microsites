@@ -19,14 +19,50 @@ class Bamboo(PyBamboo):
         except:
             raise ErrorParsingBambooData
 
-    def info_url(self, dataset_id):
-        return self.get_dataset_info_url(dataset_id)
+    def info_ident(self, dataset_id):
+        return u"get#%(url)s" % {'url': self.get_dataset_info_url(dataset_id)}
 
-    @cache_result(id_func=info_url, store='bamboo')
+    @cache_result(ident=info_ident, store='bamboo')
     def info(self, dataset_id):
-        req = requests.get(self.info_url(dataset_id))
-        self._check_response(req)
-        return self._safe_json_loads(req)
+        return super(Bamboo, self).info(dataset_id)
+
+    def query_ident(self, dataset_id, select=None, query=None, group=None,
+              as_summary=False, first=False, last=False):
+        params = {
+            'select': select,
+            'query': query,
+            'group': group
+        }
+
+        # remove key with no value
+        for key, value in params.items():
+            if not value:
+                params.pop(key)
+            else:
+                if isinstance(value, dict):
+                    params[key] = json.dumps(value)
+
+        if as_summary:
+            url = self.get_dataset_summary_url(dataset_id)
+        else:
+            url = self.get_dataset_url(dataset_id)
+
+        return (u"get#%(url)s#%(params)s"
+                % {'url': url, 'params': json.dumps(params)})
+
+    @cache_result(ident=query_ident, store='bamboo')
+    def query(self, dataset_id, select=None, query=None, group=None,
+              as_summary=False, first=False, last=False):
+        return super(Bamboo, self).query(dataset_id, select, query, group,
+              as_summary, first, last)
+
+    def count_submissions_ident(self, dataset_id, field, method='count'):
+        url = self.get_dataset_summary_url(dataset_id)
+        return u"get#%(url)s" % {'url': url}
+
+    @cache_result(ident=count_submissions_ident, store='bamboo')
+    def count_submissions(self, dataset_id, field, method='count'):
+        return super(Bamboo, self).count_submissions(dataset_id, field, method)
 
 
 def getset_bamboo_dataset(project, is_registration=False):
