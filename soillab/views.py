@@ -18,7 +18,7 @@ from microsite.barcode import b64_qrcode
 from microsite.formhub import (submit_xml_forms_formhub,
                                ErrorUploadingDataToFormhub,
                                ErrorMultipleUploadingDataToFormhub)
-from microsite.bamboo import bamboo_query
+from microsite.bamboo import Bamboo, get_bamboo_dataset_id, get_bamboo_url
 
 from soillab.spid_ssid import generate_ssids
 from soillab.result_logic import soil_results
@@ -36,7 +36,13 @@ def samples_list(request, search_string=None):
     if lookup:
         return sample_detail(request, lookup.strip())
 
-    submissions_list = bamboo_query(request.user.project)
+    # init bamboo with user's URL
+    project = request.user.project
+    bamboo = Bamboo(get_bamboo_url(project))
+    main_dataset = get_bamboo_dataset_id(project)
+
+    submissions_list = bamboo.query(main_dataset, 
+                                    caching=True, cache_expiry=60 * 15)
     submissions_list.sort(key=lambda x: x['end'], reverse=True)
 
     from pprint import pprint as pp ; pp(submissions_list)
@@ -61,15 +67,19 @@ def samples_list(request, search_string=None):
 def sample_detail(request, sample_id):
     context = {}
 
+    project = request.user.project
+    bamboo = Bamboo(get_bamboo_url(project))
+    main_dataset = get_bamboo_dataset_id(project)
     try:
-        sample = bamboo_query(request.user.project,
+        sample = bamboo.query(main_dataset,
                               query={'sample_id_sample_barcode_id': sample_id},
-                              last=True)
+                              last=True, caching=True, cache_expiry=2592000)
     except:
         try:
-            sample = bamboo_query(request.user.project, last=True,
+            sample = bamboo.query(main_dataset, last=True,
                                   query={'sample_id_sample_manual_id': 
-                                  sample_id})
+                                  sample_id},
+                                  caching=True, cache_expiry=2592000)
         except:
             raise Http404(u"Requested Sample (%(sample)s) does not exist." 
                           % {'sample': sample_id})

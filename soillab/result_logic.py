@@ -49,16 +49,17 @@ def soil_results(sample):
 
     # initialize the result dict for ordering.
     results = OrderedDict([
-        ('ec', {n: u"EC", v: 0, b: bno, lvl: lvlb, u: udsm}),
-        ('ph_water', {n: u"pH Water", v: 0, b: bno, lvl: lvlb, u: un}),
-        ('ph_cacl', {n: u"pH Salt", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('ec', {n: u"Soluble Salts", v: 0, b: bno, lvl: lvlb, u: udsm}),
+        ('ph_water', {n: u"Water pH", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('ph_cacl', {n: u"Salt pH", v: 0, b: bno, lvl: lvlb, u: un}),
         ('delta_ph', {n: u"Δ pH", v: 0, b: bno, lvl: lvlb, u: un}),
         ('soil_bulk_density', {n: u"Soil Bulk Density", v: 0, b: bno, lvl: lvlb, u: umgc3}),
         ('soil_moisture', {n: u"Soil Moisture at Sampling", v: 0, b: bno, lvl: lvlb, u: un}),
-        ('soil_nitrate', {n: u"Soil Nitrate", v: 0, b: bno, lvl: lvlb, u: umgkg}),
-        ('soil_potassium', {n: u"Soil Potassium", v: 0, b: bno, lvl: lvlb, u: umgkg}),
-        ('soil_phosphorus', {n: u"Soil Phosphorus", v: 0, b: bno, lvl: lvlb, u: umgkg}),
-        ('soil_sulfate', {n: u"Soil Sulfate", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_type', {n: u"Soil Type", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('soil_nitrate', {n: u"Soil Nitrate-N (NO3—N)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_potassium', {n: u"Soil Potassium (K)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_phosphorus', {n: u"Soil Phosphorus (PO4--P)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
+        ('soil_sulfate', {n: u"Soil Sulfate (SO4--S)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
         # ('soil_organic_matter', {n: u"Soil Organic Matter", v: 0, b: bno, lvl: lvlb}),
     ])
 
@@ -213,14 +214,58 @@ def soil_results(sample):
         percent_moisture_by_weight = None
 
     #
+    # soil type & Lime recommendation
+    #
+    try:
+        results['soil_type'][v] = sample.get('ph_cacl2_soil_type_sample', None)
+    except:
+        results['soil_type'][v] = None
+
+    def get_lime_reco(soil_type, water_ph):
+        if not soil_type or not water_ph:
+            return None
+
+        if soil_type == 'black_cracking_clays' and water_ph > 3.8 and water_ph < 4.3: return u"18 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'black_cracking_clays' and water_ph > 4.4 and water_ph < 4.8: return u"9 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'black_cracking_clays' and water_ph > 4.9 and water_ph < 5.3: return u"4.5 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'black_cracking_clays' and water_ph > 5.4 and water_ph < 7.9: return u"No action required."
+        if soil_type == 'black_cracking_clays' and water_ph > 8.0 and water_ph < 8.0: return u"6 MT S°/ha"
+        if soil_type == 'black_cracking_clays' and water_ph > 9.0 and water_ph < 9.5: return u"12 MT S°/ha"
+
+        if soil_type == 'red_clay' and water_ph > 3.8 and water_ph < 4.3: return u"5 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'red_clay' and water_ph > 4.4 and water_ph < 4.8: return u"2.5 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'red_clay' and water_ph > 4.9 and water_ph < 5.3: return u"1.2 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'red_clay' and water_ph > 5.4 and water_ph < 7.9: return u"No action required."
+        if soil_type == 'red_clay' and water_ph > 8.0 and water_ph < 8.0: return u"1.2 MT S°/ha"
+        if soil_type == 'red_clay' and water_ph > 9.0 and water_ph < 9.5: return u"2.4 MT S°/ha"
+
+        if soil_type == 'brown_loamy' and water_ph > 3.8 and water_ph < 4.3: return u"6 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'brown_loamy' and water_ph > 4.4 and water_ph < 4.8: return u"3 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'brown_loamy' and water_ph > 4.9 and water_ph < 5.3: return u"1.5 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'brown_loamy' and water_ph > 5.4 and water_ph < 7.9: return u"No action required."
+        if soil_type == 'brown_loamy' and water_ph > 8.0 and water_ph < 8.0: return u"2 MT S°/ha"
+        if soil_type == 'brown_loamy' and water_ph > 9.0 and water_ph < 9.5: return u"4 MT S°/ha"
+
+        if soil_type == 'sandy' and water_ph > 3.8 and water_ph < 4.3: return u"3 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'sandy' and water_ph > 4.4 and water_ph < 4.8: return u"1.5 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'sandy' and water_ph > 4.9 and water_ph < 5.3: return u"0.7 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'sandy' and water_ph > 5.4 and water_ph < 7.9: return u"No action required."
+        if soil_type == 'sandy' and water_ph > 8.0 and water_ph < 8.0: return u"1 MT S°/ha"
+        if soil_type == 'sandy' and water_ph > 9.0 and water_ph < 9.5: return u"2 MT S°/ha"
+
+    recommendation = get_lime_reco(results['soil_type'][v], results['ph_water'][v])
+    if recommendation:
+        results['soil_type'][lvlt] = u"Lime Recommendation: %s" % recommendation
+
+    #
     # soil nitrate
     #
     nitrate_fertility_levels = OrderedDict([
-        (21, {b: bvl, lvl: lvlvl, lvlt: u"Yes-Full N recommended."}),
-        (42, {b: bl, lvl: lvll, lvlt: u"Yes-3/4 N recommended."}),
-        (65, {b: bn, lvl: lvlm, lvlt: u"Yes-1/2 N recommended."}),
-        (90, {b: bh, lvl: lvlmh, lvlt: u"Yes, 1/4 N recommended."}),
-        (120, {b: bh, lvl: lvlh, lvlt: u"No N more recommended."}),
+        (5, {b: bvl, lvl: lvlvl, lvlt: u"Yes, Full N recommended."}),
+        (10, {b: bl, lvl: lvll, lvlt: u"Yes, Full N recommended."}),
+        (15, {b: bn, lvl: lvlm, lvlt: u"Yes, ¾ N recommended."}),
+        (20, {b: bh, lvl: lvlmh, lvlt: u"Yes, ½ N recommended."}),
+        (30, {b: bh, lvl: lvlh, lvlt: u"Yes, ¼ N recommended."}),
         ('_', {b: bvh, lvl: lvlvh, lvlt: u"No N recommended."}),
         ])
 
@@ -231,7 +276,7 @@ def soil_results(sample):
                                       (sample_nitrate - blank_nitrate) 
                                       * (30.0 
                                          / ((1.0 - percent_moisture_by_weight) * 15.0))
-                                      )
+                                      ) * (1 / 4.42)
     except:
         results['soil_nitrate'][v] = None
 
