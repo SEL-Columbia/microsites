@@ -42,7 +42,7 @@ def samples_list(request, search_string=None):
     main_dataset = get_bamboo_dataset_id(project)
 
     submissions_list = bamboo.query(main_dataset, 
-                                    caching=True, cache_expiry=60 * 15)
+                                    cache=True, cache_expiry=60 * 15)
     submissions_list.sort(key=lambda x: x['end'], reverse=True)
 
     from pprint import pprint as pp ; pp(submissions_list)
