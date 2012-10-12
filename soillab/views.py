@@ -73,13 +73,13 @@ def sample_detail(request, sample_id):
     try:
         sample = bamboo.query(main_dataset,
                               query={'sample_id_sample_barcode_id': sample_id},
-                              last=True, caching=True, cache_expiry=2592000)
+                              last=True, cache=True, cache_expiry=2592000)
     except:
         try:
             sample = bamboo.query(main_dataset, last=True,
                                   query={'sample_id_sample_manual_id': 
                                   sample_id},
-                                  caching=True, cache_expiry=2592000)
+                                  cache=True, cache_expiry=2592000)
         except:
             raise Http404(u"Requested Sample (%(sample)s) does not exist." 
                           % {'sample': sample_id})
