@@ -217,7 +217,7 @@ def soil_results(sample):
     # soil type & Lime recommendation
     #
     try:
-        results['soil_type'][v] = sample.get('ph_cacl2_soil_type_sample', None)
+        results['soil_type'][v] = sample.get('soil_type_sample_soil_type', None)
     except:
         results['soil_type'][v] = None
 
@@ -225,12 +225,12 @@ def soil_results(sample):
         if not soil_type or not water_ph:
             return None
 
-        if soil_type == 'black_cracking_clays' and water_ph > 3.8 and water_ph < 4.3: return u"18 MT CaCO3 eq. (Lime or Ash)/ha"
-        if soil_type == 'black_cracking_clays' and water_ph > 4.4 and water_ph < 4.8: return u"9 MT CaCO3 eq. (Lime or Ash)/ha"
-        if soil_type == 'black_cracking_clays' and water_ph > 4.9 and water_ph < 5.3: return u"4.5 MT CaCO3 eq. (Lime or Ash)/ha"
-        if soil_type == 'black_cracking_clays' and water_ph > 5.4 and water_ph < 7.9: return u"No action required."
-        if soil_type == 'black_cracking_clays' and water_ph > 8.0 and water_ph < 8.0: return u"6 MT S°/ha"
-        if soil_type == 'black_cracking_clays' and water_ph > 9.0 and water_ph < 9.5: return u"12 MT S°/ha"
+        if soil_type == 'black_cracking_clay' and water_ph > 3.8 and water_ph < 4.3: return u"18 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'black_cracking_clay' and water_ph > 4.4 and water_ph < 4.8: return u"9 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'black_cracking_clay' and water_ph > 4.9 and water_ph < 5.3: return u"4.5 MT CaCO3 eq. (Lime or Ash)/ha"
+        if soil_type == 'black_cracking_clay' and water_ph > 5.4 and water_ph < 7.9: return u"No action required."
+        if soil_type == 'black_cracking_clay' and water_ph > 8.0 and water_ph < 8.0: return u"6 MT S°/ha"
+        if soil_type == 'black_cracking_clay' and water_ph > 9.0 and water_ph < 9.5: return u"12 MT S°/ha"
 
         if soil_type == 'red_clay' and water_ph > 3.8 and water_ph < 4.3: return u"5 MT CaCO3 eq. (Lime or Ash)/ha"
         if soil_type == 'red_clay' and water_ph > 4.4 and water_ph < 4.8: return u"2.5 MT CaCO3 eq. (Lime or Ash)/ha"
