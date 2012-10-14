@@ -34,12 +34,17 @@ def soil_results(sample):
 
     bvl = 'important' # very low
     bvh = 'important' # very high
+    bred = 'important'
     bl = 'warning' # low
     bh = 'warning' # high
     bh = 'warning' # high
+    byellow = 'warning'
     bn = 'info' # neutral
+    bblue = 'info'
     bg = 'success' # good
+    bgreen = 'success'
     bb = 'inverse' # blank
+    bblack = 'inverse'
     bno = None
 
     udsm = u"deciS/m"
@@ -112,13 +117,14 @@ def soil_results(sample):
     # pH CaCl
     #
     ph_cacl_levels = OrderedDict([
-        (4.0, {b: bl, lvl: lvll, lvlt: u"pH is limiting: soil exhibits severe aluminum toxicity"}),
-        (5.0, {b: bl, lvl: lvll, lvlt: u"pH is limiting: soil exhibits aluminum and manganese toxicity."}),
-        (5.5, {b: bn, lvl: lvlm, lvlt: u"pH is somewhat limiting."}),
-        (6.5, {b: bg, lvl: lvlo, lvlt: u"Optimal pH for good plant productivity."}),
-        (7.5, {b: bh, lvl: lvlh, lvlt: u"pH is not limiting. However, may be Fe, Mn, Zn deficiencies in sandy soils."}),
-        (8.5, {b: bh, lvl: lvlh, lvlt: u"pH is somewhat limiting (calcareous soil). Will likely observe Fe, Mn, Zn, deficiencies."}),
-        ('_', {b: bvh, lvl: lvlvh, lvlt: u"Severe pH limitations with sodium problems (sodic)"}),
+        (4.0, {b: bred, lvl: lvll, lvlt: u"pH is limiting: soil exhibits severe aluminum toxicity"}),
+        (4.8, {b: bred, lvl: lvll, lvlt: u"pH is limiting: soil exhibits aluminum and manganese toxicity."}),
+        (5.4, {b: byellow, lvl: lvlm, lvlt: u"pH is somewhat limiting."}),
+        (6.5, {b: bgreen, lvl: lvlo, lvlt: u"Optimal pH for good plant productivity."}),
+        (7.5, {b: bgreen, lvl: lvlh, lvlt: u"pH is not limiting. However, may be Fe, Mn, Zn deficiencies in sandy soils."}),
+        (8.0, {b: byellow, lvl: lvlh, lvlt: u"pH is not limiting. However, may be Fe, Mn, Zn deficiencies in sandy soils."}),
+        (8.5, {b: bred, lvl: lvlh, lvlt: u"pH is somewhat limiting (calcareous soil). Will likely observe Fe, Mn, Zn, deficiencies."}),
+        ('_', {b: bred, lvl: lvlvh, lvlt: u"Severe pH limitations with sodium problems (sodic)"}),
         ])
 
     try:
