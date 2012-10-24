@@ -208,7 +208,7 @@ def login_greeter(request):
     return login(request, template_name='login.html', extra_context=context)
 
 
-@project_required
+@project_required()
 def list_submissions(request, id_prefix=u''):
 
     context = {'category': 'submissions'}

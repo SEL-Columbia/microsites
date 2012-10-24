@@ -9,6 +9,7 @@ from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.decorators import project_required
 from microsite.barcode import (build_urlid_with,
                                short_id_from, detailed_id_dict, b64_qrcode)
+from microsite.models import Project
 from microsite.bamboo import count_submissions, bamboo_query
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_public_api_url,
@@ -25,8 +26,10 @@ from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_formxls_url,
                                get_formhub_form_formjson_url)
 
+DEFAULT_PROJECT = Project.objects.get(slug='reportcard')
 
-@project_required
+
+@project_required(guests=DEFAULT_PROJECT)
 def home(request):
     context = {'category': 'home'}
 
@@ -52,7 +55,7 @@ def home(request):
     return render(request, 'home.html', context)
 
 
-@project_required
+@project_required(guests=DEFAULT_PROJECT)
 def list_submissions(request):
 
     context = {'category': 'submissions'}
@@ -77,7 +80,7 @@ def list_submissions(request):
     return render(request, 'list_submissions.html', context)
 
 
-@project_required
+@project_required(guests=DEFAULT_PROJECT)
 def list_teachers(request):
 
     context = {'category': 'teachers',
@@ -134,7 +137,7 @@ def list_teachers(request):
     return render(request, 'list_teachers.html', context)
 
 
-@project_required
+@project_required(guests=DEFAULT_PROJECT)
 def detail_teacher(request, uid):
 
     method = request.GET.get('method', 'django')
@@ -144,6 +147,7 @@ def detail_teacher(request, uid):
     return view(request, uid)
 
 
+@project_required(guests=DEFAULT_PROJECT)
 def detail_teacher_bamboo(request, uid):
     ''' Report Card View leveraging bamboo aggregation '''
 
@@ -173,6 +177,7 @@ def detail_teacher_bamboo(request, uid):
     return render(request, 'detail_teacher_bamboo.html', context)
 
 
+@project_required(guests=DEFAULT_PROJECT)
 def detail_teacher_django(request, uid):
     ''' Report Card View processing data from submissions list/data only
 
@@ -331,7 +336,7 @@ def detail_teacher_django(request, uid):
     return render(request, 'detail_teacher.html', context)
 
 
-@project_required
+@project_required(guests=DEFAULT_PROJECT)
 def card_teacher(request, uid):
 
     context = {'category': 'teachers'}
@@ -352,7 +357,7 @@ def card_teacher(request, uid):
     return render(request, 'card_teacher.html', context)
 
 
-@project_required
+@project_required(guests=DEFAULT_PROJECT)
 def form(request):
 
     context = {'category': 'form'}
