@@ -6,7 +6,8 @@ import requests
 from pybamboo import PyBamboo, ErrorParsingBambooData
 
 from microsite.models import Option
-from microsite.formhub import get_formhub_user_url, get_formhub_form
+from microsite.formhub import (get_formhub_user_url, 
+                               get_formhub_form, get_formhub_ids_form)
 from microsite.utils import get_option, load_json
 from microsite.caching import cache_result
 
@@ -70,7 +71,8 @@ def getset_bamboo_dataset(project, is_registration=False):
 
     key = 'bamboo_ids_dataset' if is_registration else 'bamboo_dataset'
 
-    form = get_formhub_form(project)
+    form_func = get_formhub_ids_form if is_registration else get_formhub_form
+    form = form_func(project)
 
     return raw_getset_bamboo_dataset(project, form, key, is_registration)
 
