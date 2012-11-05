@@ -2,8 +2,9 @@
 {% load mstag %}
 
 {% block page_title %}Ethiopian Soil Tracking System{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ STATIC_URL }}css/soiltrack.css" type="text/css" media="screen,projection" />{% endblock %}
-
+{% block extra_head %}<link rel="stylesheet" href="{{ STATIC_URL }}css/soiltrack.css" type="text/css" media="screen,projection" />
+<script src="{{ STATIC_URL }}soiltrack.js"></script>{% endblock %}
+{% block end_js_call %}addJQ_find_sample();{% endblock %}
 {% block content %}
 
 <div class="row-fluid">
@@ -30,19 +31,20 @@
     </table>
 
     <h2>Find a Sample</h2>
-    <form class="form-search">
-    <input type="text" class="input-medium search-query" placeholder="Sample SSID">
-    <button type="submit" class="btn">Find</button>
+    <form class="form-search" method="get" action="{% url sample_detail %}">
+    <input type="text" class="input-medium search-query" placeholder="Sample SSID" name="sid">
+    <button type="submit" class="btn" id="find-btn">Find</button>
     </form>
-    
-</div>
 
-<!-- <div class="span1"></div> -->
+</div>
 
 <div class="span3">
     <div class="well sidebar-nav">
         <ul class="nav nav-list">
         <li class="nav-header">Latest events</li>
+        {% for event in last_events %}
+        <li><a href="#"><strong>NG-ctCJwi-1</strong><sup>80-100</sup> <span class="label label-inverse">arrived at NSTC <span class="badge badge-warning">6</span></span> on July 27 17:32</a></li>
+        {% endfor %}
         <li><a href="#"><strong>NG-ctCJwi-1</strong><sup>80-100</sup> <span class="label label-inverse">arrived at NSTC <span class="badge badge-warning">6</span></span> on July 27 17:32</a></li>
         <li><a href="#"><strong>NG-ctCJwi-2</strong><sup>20-40</sup> <span class="label label-inverse">arrived at PC <span class="badge badge-warning">3</span></span> on July 27 17:32</a></li>
         <li><a href="#"><strong>NG-ctCJwi-4</strong><sup>top</sup> <span class="label label-inverse">sent to PC <span class="badge badge-warning">1</span></span> on July 27 17:32</a></li>
