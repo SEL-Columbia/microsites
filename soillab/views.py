@@ -41,11 +41,9 @@ def samples_list(request, search_string=None):
     bamboo = Bamboo(get_bamboo_url(project))
     main_dataset = get_bamboo_dataset_id(project)
 
-    submissions_list = bamboo.query(main_dataset, 
+    submissions_list = bamboo.query(main_dataset,
                                     cache=True, cache_expiry=60)
     submissions_list.sort(key=lambda x: x['end'], reverse=True)
-
-    from pprint import pprint as pp ; pp(submissions_list)
 
     paginator = FlynsarmyPaginator(submissions_list, 20, adjacent_pages=2)
 
@@ -77,23 +75,21 @@ def sample_detail(request, sample_id):
     except:
         try:
             sample = bamboo.query(main_dataset, last=True,
-                                  query={'sample_id_sample_manual_id': 
+                                  query={'sample_id_sample_manual_id':
                                   sample_id},
                                   cache=True, cache_expiry=2592000)
         except:
-            raise Http404(u"Requested Sample (%(sample)s) does not exist." 
+            raise Http404(u"Requested Sample (%(sample)s) does not exist."
                           % {'sample': sample_id})
 
     from collections import OrderedDict
     sorted_sample = OrderedDict([(key, sample[key]) for key in sorted(sample.iterkeys())])
 
-    from pprint import pprint as pp ; pp(sample)
-
     results = soil_results(sample)
 
     context.update({'sample': sorted_sample,
                     'results': results})
-    
+
     return render(request, 'sample_detail.html', context)
 
 
@@ -108,7 +104,7 @@ def idgen(request, nb_ids=DEFAULT_IDS):
         nb_ids = DEFAULT_IDS
 
     all_ids = []
-    
+
     # for i in xrange(0, nb_ids):
     for ssid in generate_ssids('NG'):
         # this is a tuple of (ID, B64_QRPNG)
@@ -161,8 +157,8 @@ def form_splitter(request, project_slug='soildoc'):
     # map field suffixes with IDs in holder
     # we exclude forms with no data on trigger field so it won't be process
     # nor sent to formhub
-    indexes = [l for l in AVAIL_SUFFIXES 
-                 if (jsform.get('sample_id_$$/sample_barcode_id_$$'.replace('$$', l), None) 
+    indexes = [l for l in AVAIL_SUFFIXES
+                 if (jsform.get('sample_id_$$/sample_barcode_id_$$'.replace('$$', l), None)
                      or jsform.get('sample_id_$$/sample_manual_id_$$'.replace('$$', l), None))]
 
     # initialize holder for each form]
@@ -207,21 +203,27 @@ def form_splitter(request, project_slug='soildoc'):
         xml_head = u"<?xml version='1.0' ?><%(form_id)s id='%(form_id)s'>" % dd
         xml_tail = u"</%(form_id)s>" % dd
 
+        # remove the parent's instance ID
+        try:
+            jsform['meta'].pop('instanceID')
+        except KeyError:
+            pass
+
         for field in jsform.keys():
             # treat field starting with underscore are internal ones.
             # and remove them
             if field.startswith('_'):
                 jsform.pop(field)
-        
+
         return xml_head + dict2xml(jsform) + xml_tail
 
     xforms = [json2xform(forms[indexes.index(i)].copy()) for i in indexes]
 
     try:
         submit_xml_forms_formhub(project, xforms, as_bulk=False)
-    except (ErrorUploadingDataToFormhub, 
+    except (ErrorUploadingDataToFormhub,
             ErrorMultipleUploadingDataToFormhub) as e:
-        return HttpResponse(u"%(intro)s\n%(detail)s" 
+        return HttpResponse(u"%(intro)s\n%(detail)s"
                             % {'intro': e,
                                'detail': e.details()}, status=502)
     except Exception as e:

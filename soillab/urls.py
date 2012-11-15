@@ -16,7 +16,7 @@ urlpatterns = patterns('',
     url(r'samples/?$', views.samples_list, name='samples_list'),
     url(r'samples/(?P<sample_id>.+)$', # [a-zA-Z0-9\-]
         views.sample_detail, name='sample'),
-    url(r'^about/?$', 
+    url(r'^about/?$',
         direct_to_template, {'template': 'about.html',
                              'extra_context': {'category': 'about'}},
         name='about'),

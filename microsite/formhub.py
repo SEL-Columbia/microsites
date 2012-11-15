@@ -17,9 +17,9 @@ class ErrorUploadingDataToFormhub(IOError):
 
 
 class ErrorMultipleUploadingDataToFormhub(IOError):
-    
+
     def __init__(self, *args, **kwargs):
-        super(ErrorMultipleUploadingDataToFormhub, self).__init__(*args, 
+        super(ErrorMultipleUploadingDataToFormhub, self).__init__(*args,
                                                                   **kwargs)
         self.timeouts = []
         self.failures = []
@@ -42,7 +42,7 @@ class ErrorMultipleUploadingDataToFormhub(IOError):
         return (u"Error while submitting multiple forms. "
                 u"%(total)d submissions failed:\n%(nb_timeouts)d time outs.\n"
                 u"%(nb_failures)d general failures.\n"
-                u"%(nb_denies)d submissions rejected." 
+                u"%(nb_denies)d submissions rejected."
                 % {'total': self.count(),
                    'nb_timeouts': len(self.timeouts),
                    'nb_failures': len(self.failures),
@@ -77,7 +77,7 @@ def get_formhub_ids_form(project):
 
 
 def get_formhub_user_url(project, is_registration=False):
-    user = (get_formhub_ids_user(project) if is_registration 
+    user = (get_formhub_ids_user(project) if is_registration
                                          else get_formhub_user(project))
     data = {'base': get_formhub_url(project),
             'user': user}
@@ -85,7 +85,7 @@ def get_formhub_user_url(project, is_registration=False):
 
 
 def get_formhub_form_url(project, is_registration=False):
-    form = (get_formhub_ids_form(project) if is_registration 
+    form = (get_formhub_ids_form(project) if is_registration
                                          else get_formhub_form(project))
     data = {'user_url': get_formhub_user_url(project, is_registration),
             'form': form}
@@ -204,8 +204,8 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
         # upload the zip file
         try:
             req = requests.post(get_formhub_bulk_submission_url(project),
-                                    files={'zip_submission_file': 
-                                           (zip_file, 
+                                    files={'zip_submission_file':
+                                           (zip_file,
                                             open(zip_file))},
                                            timeout=FORMHUB_UPLOAD_TIMEOUT)
         except requests.exceptions.Timeout:
@@ -215,7 +215,7 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
             raise ErrorUploadingDataToFormhub(u"Unable to send: %r" % e.message)
 
         if not req.status_code in (200, 201, 202):
-            raise ErrorUploadingDataToFormhub(u'Unable to submit ZIP: %s' 
+            raise ErrorUploadingDataToFormhub(u'Unable to submit ZIP: %s'
                                               % req.text)
         print(req.text)
         return True
@@ -251,12 +251,12 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
 
         try:
             assert req.status_code in (200, 201, 202), (u"Received unexpected "
-                                                        u"HTTP return code %d." 
+                                                        u"HTTP return code %d."
                                                         % req.status_code)
         except AssertionError as e:
             print(req.text)
             exception.denies.append(e)
-    
+
     if exception.is_filled():
         raise exception
 
