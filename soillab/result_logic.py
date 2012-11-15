@@ -37,7 +37,6 @@ def soil_results(sample):
     bred = 'important'
     bl = 'warning' # low
     bh = 'warning' # high
-    bh = 'warning' # high
     byellow = 'warning'
     bn = 'info' # neutral
     bblue = 'info'
@@ -60,7 +59,7 @@ def soil_results(sample):
         ('delta_ph', {n: u"Δ pH", v: 0, b: bno, lvl: lvlb, u: un}),
         ('soil_bulk_density', {n: u"Soil Bulk Density", v: 0, b: bno, lvl: lvlb, u: umgc3}),
         ('soil_moisture', {n: u"Soil Moisture at Sampling", v: 0, b: bno, lvl: lvlb, u: un}),
-        ('soil_type', {n: u"Soil Type", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('soil_type', {n: u"Lime Recommendation", v: 0, b: bno, lvl: lvlb, u: un}),
         ('soil_nitrate', {n: u"Soil Nitrate-N (NO3—N)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
         ('soil_potassium', {n: u"Soil Potassium (K)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
         ('soil_phosphorus', {n: u"Soil Phosphorus (PO4--P)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
@@ -279,8 +278,8 @@ def soil_results(sample):
         sample_nitrate = float(sample.get('nitrate_sample_nitrate', None))
         blank_nitrate = float(sample.get('nitrate_blank_nitrate', None))
         results['soil_nitrate'][v] = (
-                                      (sample_nitrate - blank_nitrate) 
-                                      * (30.0 
+                                      (sample_nitrate - blank_nitrate)
+                                      * (30.0
                                          / ((1.0 - percent_moisture_by_weight) * 15.0))
                                       ) * (1 / 4.42)
     except:
@@ -305,8 +304,8 @@ def soil_results(sample):
         sample_potassium = float(sample.get('potassium_sample_potassium', None))
         blank_potassium = float(sample.get('potassium_blank_potassium', None))
         results['soil_potassium'][v] = (
-                                        (sample_potassium - blank_potassium) 
-                                        * (30.0 
+                                        (sample_potassium - blank_potassium)
+                                        * (30.0
                                            / ((1.0 - percent_moisture_by_weight) * 15.0))
                                         )
     except:
@@ -333,8 +332,8 @@ def soil_results(sample):
         soil_phosphorus_ppb = (
                                 (
                                  (sample_phosphorus_ppb_meter - blank_phosphorus_ppb_meter)
-                                 * (10.0 / 2.0) 
-                                 * (30.0 / 
+                                 * (10.0 / 2.0)
+                                 * (30.0 /
                                     ((1.0 - percent_moisture_by_weight) * 15.0))
                                 ) / 1000
                               )
@@ -347,7 +346,7 @@ def soil_results(sample):
         soil_phosphorus_ppm = (
                                (
                                 (sample_phosphorus_ppm_meter - blank_phosphorus_ppm_meter)
-                                * (10.0 / 2.0) 
+                                * (10.0 / 2.0)
                                 * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
                                 * (30.97 / 94.97)
                                )
@@ -393,17 +392,17 @@ def soil_results(sample):
         sulfur_analysis_vial_water = float(sample.get('s_spike_and_dilution_sample_sulfur_analysis_vial_water', None))
 
         soil_sulfur_ppb = (
-                          sample_sulfur_ppb_meter 
-                          * slope_low_spike_ppb 
+                          sample_sulfur_ppb_meter
+                          * slope_low_spike_ppb
                           * (sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
-                          / sulfur_analysis_vial_extract 
+                          / sulfur_analysis_vial_extract
                           * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
                           )
 
     except:
         soil_sulfur_ppb = None
 
-    try:   
+    try:
         sample_sulfur_ppm_meter = float(sample.get('sulfur_ppm_meter_sample_sulfur_ppm_meter', None))
         sulfur_analysis_vial_extract = float(sample.get('s_spike_and_dilution_sample_sulfur_analysis_vial_extract', None))
         sulfur_analysis_vial_water = float(sample.get('s_spike_and_dilution_sample_sulfur_analysis_vial_water', None))
