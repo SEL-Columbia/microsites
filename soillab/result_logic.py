@@ -28,22 +28,23 @@ def soil_results(sample):
     lvlmh = u"Medium/High"
     lvlh = u"High"
     lvlvh = u"Very High"
-    lvlg = u"Good"
+    # lvlg = u"Good"
     lvlo = u"Optimal"
     lvlb = u"No Data"
 
-    bvl = 'important' # very low
-    bvh = 'important' # very high
+    bvl = 'important'  # very low
+    bvh = 'important'  # very high
     bred = 'important'
-    bl = 'warning' # low
-    bh = 'warning' # high
+    bl = 'warning'  # low
+    bh = 'warning'  # high
+    bm = 'warning'
     byellow = 'warning'
-    bn = 'info' # neutral
-    bblue = 'info'
-    bg = 'success' # good
+    bn = 'info'  # neutral
+    # bblue = 'info'
+    # bg = 'success'  # good
     bgreen = 'success'
-    bb = 'inverse' # blank
-    bblack = 'inverse'
+    # bb = 'inverse'  # blank
+    # bblack = 'inverse'
     bno = None
 
     udsm = u"deciS/m"
@@ -72,7 +73,7 @@ def soil_results(sample):
     #
     soil_units = {
         'microseimens_per_cm': 0.001,
-        'parts_per_million': 1.0/500,
+        'parts_per_million': 1.0 / 500,
         'milliseimens_per_cm': 1.0,
         'decisiemens_per_meter': 1.0,
         'mmhos_per_cm': 1.0,
@@ -80,7 +81,7 @@ def soil_results(sample):
 
     ec_levels = OrderedDict([
         (0.1, {b: bl, lvl: lvll, lvlt: u"Low fertility, leached nutrients."}),
-        (0.3, {b: bn, lvl: lvlm, lvlt: u"Medium fertility, especially in acid soils."}),
+        (0.3, {b: bm, lvl: lvlm, lvlt: u"Medium fertility, especially in acid soils."}),
         (0.6, {b: bn, lvl: lvlm, lvlt: u"Slightly saline. Limiting for salt-sensitive crops."}),
         (1.2, {b: bh, lvl: lvlh, lvlt: u"Very saline. Limiting for salt-sensitive crops. Some intolerance for salt-enduring crops."}),
         (2.4, {b: bh, lvl: lvlh, lvlt: u"Severe salinity. Strong limitations for both salt-sensitive and tolerant crops."}),
@@ -268,7 +269,7 @@ def soil_results(sample):
     nitrate_fertility_levels = OrderedDict([
         (5, {b: bvl, lvl: lvlvl, lvlt: u"Yes, Full N recommended."}),
         (10, {b: bl, lvl: lvll, lvlt: u"Yes, Full N recommended."}),
-        (15, {b: bn, lvl: lvlm, lvlt: u"Yes, ¾ N recommended."}),
+        (15, {b: bm, lvl: lvlm, lvlt: u"Yes, ¾ N recommended."}),
         (20, {b: bh, lvl: lvlmh, lvlt: u"Yes, ½ N recommended."}),
         (30, {b: bh, lvl: lvlh, lvlt: u"Yes, ¼ N recommended."}),
         ('_', {b: bvh, lvl: lvlvh, lvlt: u"No N recommended."}),
@@ -295,7 +296,7 @@ def soil_results(sample):
     potassium_fertility_levels = OrderedDict([
         (30, {b: bvl, lvl: lvlvl, lvlt: u"K fertilizer needed: Very Likely."}),
         (60, {b: bl, lvl: lvll, lvlt: u"K fertilizer needed: Likely."}),
-        (90, {b: bn, lvl: lvlm, lvlt: u"K fertilizer needed: 50/50."}),
+        (90, {b: bm, lvl: lvlm, lvlt: u"K fertilizer needed: 50/50."}),
         (120, {b: bh, lvl: lvlh, lvlt: u"K fertilizer needed: Unlikely."}),
         ('_', {b: bvh, lvl: lvlvh, lvlt: u"No K fertilizer needed."}),
         ])
@@ -322,7 +323,7 @@ def soil_results(sample):
         (0.05, {b: bvl, lvl: lvlel, lvlt: u"Increasing P is top priority."}),
         (0.1, {b: bvl, lvl: lvlvl, lvlt: u"P fertilizer needed: Very Likely."}),
         (0.3, {b: bl, lvl: lvll, lvlt: u"P fertilizer needed: Likely."}),
-        (0.5, {b: bn, lvl: lvlm, lvlt: u"P fertilizer needed: 50/50 chance of response."}),
+        (0.5, {b: bm, lvl: lvlm, lvlt: u"P fertilizer needed: 50/50 chance of response."}),
         ('_', {b: bh, lvl: lvlh, lvlt: u"No P fertilizer needed."}),
         ])
 
@@ -370,7 +371,7 @@ def soil_results(sample):
     sulfate_fertility_levels = OrderedDict([
         (10, {b: bvl, lvl: lvlvl, lvlt: u"S fertilizer needed: Very Likely."}),
         (15, {b: bl, lvl: lvll, lvlt: u"S fertilizer needed: Likely."}),
-        (20, {b: bn, lvl: lvlm, lvlt: u"S fertilizer needed: 50/50 chance of response."}),
+        (20, {b: bm, lvl: lvlm, lvlt: u"S fertilizer needed: 50/50 chance of response."}),
         ('_', {b: bh, lvl: lvlh, lvlt: u"No S fertilizer needed."}),
         ])
 
