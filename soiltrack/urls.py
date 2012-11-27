@@ -16,7 +16,7 @@ urlpatterns = patterns('',
     url(r'^idgen/(?P<nb_ids>[0-9]*)$', views.idgen, name='idgen'),
     # overwrite settings management to getset bamboo datasets
     url(r'^options/?$', views.options, name='options'),
-    url(r'^pc/(?P<pc_slug>[a-zA-Z0-9\-]+)?$',
+    url(r'^pc/(?P<pc_slug>[a-zA-Z0-9\-\_]+)?$',
         views.processing_center, name='pc'),
     url(r'^sample/?$', views.sample_detail, name='sample_detail'),
 )

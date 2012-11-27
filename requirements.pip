@@ -7,3 +7,5 @@ South
 Pillow
 dict2xml
 pybamboo
+python-dateutil
+pytz

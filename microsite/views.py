@@ -10,15 +10,18 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import HttpResponse, Http404
 from django.contrib import messages
 from django.core.paginator import EmptyPage, PageNotAnInteger
+from pybamboo.connection import Connection
 
 from microsite.utils import (dump_json, load_json,
                              import_csv_content_into_namespace)
 from microsite.decorators import project_required
-from microsite.models import Option,KeyNamePair
-from microsite.bamboo import getset_bamboo_dataset, bamboo_query
+from microsite.models import Option, KeyNamePair
+from microsite.bamboo import getset_bamboo_dataset
 from microsite.barcode import b64_random_qrcode, detailed_id_dict
 from microsite.decorators import unconfigured_project_required
 from microsite.digg_paginator import FlynsarmyPaginator
+from microsite.bamboo import (get_bamboo_dataset_id, get_bamboo_url,
+                              CachedDataset)
 
 
 DEFAULT_IDS = 5
@@ -45,7 +48,7 @@ class OptionForm(forms.ModelForm):
         # exclude = ()
 
     def __init__(self, *args, **kwargs):
-        if kwargs.has_key('project'):
+        if 'project' in kwargs.keys():
             self._project = kwargs.pop('project')
         super(OptionForm, self).__init__(*args, **kwargs)
 
@@ -88,10 +91,10 @@ def options(request):
     context = {'category': 'options'}
 
     if request.method == "POST":
-        forms = [OptionForm(request.POST, 
+        forms = [OptionForm(request.POST,
                             prefix=str(option),
                             instance=option,
-                            project=request.user.project) 
+                            project=request.user.project)
                  for option
                  in Option.objects.filter(project=request.user.project)]
 
@@ -101,27 +104,27 @@ def options(request):
 
             # try to update bamboo datasets
             if getset_bamboo_dataset(request.user.project):
-                messages.success(request, 
+                messages.success(request,
                                  u"bamboo dataset retrieved successfuly.")
             else:
                 messages.warning(request,
                                  u"Unable to retrieve bamboo dataset.")
- 
+
             if getset_bamboo_dataset(request.user.project,
                                      is_registration=True):
                 messages.success(request,
                                  u"bamboo dataset (registration) "
                                  u"retrieved successfuly.")
             else:
-                messages.warning(request, 
+                messages.warning(request,
                                  u"Unable to retrieve bamboo "
                                  u"dataset (registration).")
 
             return redirect(options)
 
     else:
-        forms = [OptionForm(prefix=str(option), instance=option) 
-                 for option 
+        forms = [OptionForm(prefix=str(option), instance=option)
+                 for option
                  in Option.objects.filter(project=request.user.project)
                                   .order_by('name')]
 
@@ -139,7 +142,7 @@ def key_name(request):
 
     class UploadFileForm(forms.Form):
         title = forms.CharField(max_length=50)
-        file  = forms.FileField()
+        file = forms.FileField()
 
     if request.method == 'POST':
 
@@ -154,18 +157,18 @@ def key_name(request):
                 import_csv_content_into_namespace(request.user.project,
                                                   namespace,
                                                   uploaded_file.read())
-                messages.success(request, 
+                messages.success(request,
                                  u"CSV file has been successfuly imported.")
                 return redirect(key_name)
             except:
                 context.update({'csv_file_error_parsing': True})
-            
+
         else:
             context.update({'csv_file_error_missing': True})
 
     namespaces = []
     for ns_key, ns_name in settings.KEY_NAME_NAMESPACES:
-        namespaces.append((ns_key, ns_name, 
+        namespaces.append((ns_key, ns_name,
                            KeyNamePair.objects
                                       .filter(namespace=ns_key,
                                               project=request.user.project)
@@ -179,12 +182,12 @@ def key_name(request):
 def key_name_csv_export(request, namespace):
 
     if not namespace in [x[0] for x in settings.KEY_NAME_NAMESPACES]:
-        raise Http404(u"Requested namespace (%(ns)s) does not exist." 
+        raise Http404(u"Requested namespace (%(ns)s) does not exist."
                       % {'ns': namespace})
 
     response = HttpResponse(mimetype='application/csv')
-    fname = (u"%(ns)s_%(date)s.csv" 
-             % {'ns': namespace, 
+    fname = (u"%(ns)s_%(date)s.csv"
+             % {'ns': namespace,
                 'date': datetime.datetime.now().strftime('%Y%m%d')})
     response['Content-Disposition'] = 'attachment; filename=%s' % fname
     response.write('Key,Name\n')
@@ -213,7 +216,11 @@ def list_submissions(request, id_prefix=u''):
 
     context = {'category': 'submissions'}
 
-    submissions_list = bamboo_query(request.user.project)
+    connection = Connection(get_bamboo_url(request.user.project))
+    dataset = CachedDataset(get_bamboo_dataset_id(request.user.project),
+                            connection=connection)
+
+    submissions_list = dataset.get_data()
 
     for submission in submissions_list:
         submission.update(detailed_id_dict(submission, prefix=id_prefix))

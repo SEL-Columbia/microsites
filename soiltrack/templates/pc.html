@@ -6,9 +6,9 @@
 
 {% block content %}
 
-<h1>{{ pc|title }} Processing Center</h1>
+<h1>{{ pc_name|title }} Processing Center (<small>{{ pc }}</small>)</h1>
 <table class="table table-striped hometable">
-    <tr><th>Samples Received to date</th><td class="samplenb">{{ nb_received|numberformat }}</td><td><a href="" class="btn  btn-small">Browse Received Samples</a></td></tr>
+    <tr><th>Samples Received to date</th><td class="samplenb">{{ nb_received|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Received Samples</a></td> --></tr>
     <tr><th>Samples Received in <strong>past 7 days</strong></th><td class="samplenb">{{ nb_received_7days|numberformat }}</td><td><a href="" class="btn  btn-small">Browse Samples Received in last 7d</a></td></tr>
     <tr><th>Samples Processed to date</strong></th><td class="samplenb">{{ nb_processed|numberformat }}<br /><em>Avg: {{ avg_processing }}days</em></td><td><a href="" class="btn  btn-small">Browse Processed Samples</a></td></tr>
     <tr><th>Samples Processed in <strong>past 7 days</strong></th><td class="samplenb">{{ nb_processed_7days|numberformat }}</td><td><a href="" class="btn  btn-small">Browse Samples Processed in last 7d</a></td></tr>

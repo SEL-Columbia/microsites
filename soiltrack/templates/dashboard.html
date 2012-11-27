@@ -9,25 +9,27 @@
 
 <div class="row-fluid">
 
-<div class="span7">
+    <h2>Progress Overview</h2>
+<div class="span5">
 
-<!--     <div class="hero-unit">
+    <!--
+        <div class="hero-unit">
         <h1>Ethiopian Soil Tracking System</h1>
     </div> -->
-    <h2>Progress Overview</h2>
+
     <table class="table table-striped hometable">
         <tr><th>Samples Collected<br />
         <div class="progress progress-striped progress-info "><div class="bar" style="width: {{ pc_collected|percent_raw }}%;"></div></div>
-        </th><td class="samplenb">{{ nb_collected|numberformat }}</td><td><a href="" class="btn  btn-small">Browse Collected Samples</a></td></tr>
+        </th><td class="samplenb">{{ nb_collected|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Collected Samples</a></td> --></tr>
         <tr><th>Samples Processed<br />
         <div class="progress progress-striped progress-success"><div class="bar" style="width: {{ pc_processed|percent_raw }}%;">{{ pc_processed|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_processed|numberformat }}/<em>{{ nb_processing }}</em></td><td class="btn-group"><a href="" class="btn  btn-small">Browse Processed Samples</a><a href="" class="btn btn-small">Browse in-processing Samples</a></td></tr>
+        </th><td class="samplenb">{{ nb_processed|numberformat }}/<em>{{ nb_processing }}</em></td><!-- <td class="btn-group"><a href="" class="btn  btn-small">Browse Processed Samples</a><a href="" class="btn btn-small">Browse in-processing Samples</a></td> --></tr>
         <tr><th>Samples Analyzed<br />
         <div class="progress progress-striped progress-warning"><div class="bar" style="width: {{ pc_analyzed|percent_raw }}%;">{{ pc_analyzed|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_analyzed|numberformat }}/<em>{{ nb_analyzing }}</em></td><td class="btn-group"><a href="" class="btn  btn-small">Browse Analyzed Samples</a><a href="" class="btn btn-small">Browse being-analyzed Samples</a></td></tr>
+        </th><td class="samplenb">{{ nb_analyzed|numberformat }}/<em>{{ nb_analyzing }}</em></td><!-- <td class="btn-group"><a href="" class="btn  btn-small">Browse Analyzed Samples</a><a href="" class="btn btn-small">Browse being-analyzed Samples</a></td> --></tr>
         <tr><th>Lost or Missing Samples<br />
         <div class="progress progress-striped progress-danger"><div class="bar" style="width: {{ pc_lost|percent_raw }}%;">{{ pc_lost|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_lost|numberformat }}</td><td><a href="" class="btn  btn-small">Browse Missing Samples</a></td></tr>
+        </th><td class="samplenb">{{ nb_lost|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Missing Samples</a></td> --></tr>
     </table>
 
     <h2>Find a Sample</h2>
@@ -43,13 +45,21 @@
         <ul class="nav nav-list">
         <li class="nav-header">Latest events</li>
         {% for event in last_events %}
-        <li><a href="#"><strong>NG-ctCJwi-1</strong><sup>80-100</sup> <span class="label label-inverse">arrived at NSTC <span class="badge badge-warning">6</span></span> on July 27 17:32</a></li>
+        <li><a href="{% url sample_detail %}?sid={{ event.sample_id }}"><strong>{{ event.ident }}</strong> <span class="label label-inverse">{{ event.verbose_status }} <span class="badge {{ event.status|status2badge }}">{{ event.status }}</span></span> on {{ event.data.survey_day }}</a></li>
         {% endfor %}
-        <li><a href="#"><strong>NG-ctCJwi-1</strong><sup>80-100</sup> <span class="label label-inverse">arrived at NSTC <span class="badge badge-warning">6</span></span> on July 27 17:32</a></li>
-        <li><a href="#"><strong>NG-ctCJwi-2</strong><sup>20-40</sup> <span class="label label-inverse">arrived at PC <span class="badge badge-warning">3</span></span> on July 27 17:32</a></li>
-        <li><a href="#"><strong>NG-ctCJwi-4</strong><sup>top</sup> <span class="label label-inverse">sent to PC <span class="badge badge-warning">1</span></span> on July 27 17:32</a></li>
         <li class="nav-header">NB OF SUBMISSIONS: {{ nb_submissions|NAdefault|numberformat }}</li>
         <li class="nav-header">NB OF PLOTS: {{ nb_plots|NAdefault|numberformat }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="span3">
+    <div class="well sidebar-nav">
+        <ul class="nav nav-list">
+        <li class="nav-header">Processing Centers</li>
+        {% for pc in processing_centers %}
+        <li><a href="{% url pc pc_slug=pc.0 %}"><strong>{{ event.ident }}</strong>{{ pc.1|title }}</a></li>
+        {% endfor %}
         </ul>
     </div>
 </div>
