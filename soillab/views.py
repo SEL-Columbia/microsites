@@ -9,8 +9,9 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from dict2xml import dict2xml
 from django.core.paginator import EmptyPage, PageNotAnInteger
-from microsite.digg_paginator import FlynsarmyPaginator
+from pybamboo.connection import Connection
 
+from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.views import DEFAULT_IDS
 from microsite.models import Project
 from microsite.decorators import project_required
@@ -18,7 +19,8 @@ from microsite.barcode import b64_qrcode
 from microsite.formhub import (submit_xml_forms_formhub,
                                ErrorUploadingDataToFormhub,
                                ErrorMultipleUploadingDataToFormhub)
-from microsite.bamboo import Bamboo, get_bamboo_dataset_id, get_bamboo_url
+from microsite.bamboo import (CachedDataset,
+                              get_bamboo_dataset_id, get_bamboo_url)
 
 from soillab.spid_ssid import generate_ssids
 from soillab.result_logic import soil_results
@@ -38,11 +40,11 @@ def samples_list(request, search_string=None):
 
     # init bamboo with user's URL
     project = request.user.project
-    bamboo = Bamboo(get_bamboo_url(project))
-    main_dataset = get_bamboo_dataset_id(project)
+    connection = Connection(get_bamboo_url(project))
+    main_dataset = CachedDataset(get_bamboo_dataset_id(project),
+                                 connection=connection)
 
-    submissions_list = bamboo.query(main_dataset,
-                                    cache=True, cache_expiry=60)
+    submissions_list = main_dataset.get_data(cache=True, cache_expiry=60)
     submissions_list.sort(key=lambda x: x['end'], reverse=True)
 
     paginator = FlynsarmyPaginator(submissions_list, 20, adjacent_pages=2)
@@ -66,24 +68,26 @@ def sample_detail(request, sample_id):
     context = {}
 
     project = request.user.project
-    bamboo = Bamboo(get_bamboo_url(project))
-    main_dataset = get_bamboo_dataset_id(project)
+    connection = Connection(get_bamboo_url(project))
+    main_dataset = CachedDataset(get_bamboo_dataset_id(project),
+                                 connection=connection)
     try:
-        sample = bamboo.query(main_dataset,
-                              query={'sample_id_sample_barcode_id': sample_id},
-                              last=True, cache=True, cache_expiry=2592000)
+        sample = main_dataset.get_data(query={'sample_id_sample_barcode_id':
+                                              sample_id},
+                                       cache=True,
+                                       cache_expiry=2592000)[-1]
     except:
         try:
-            sample = bamboo.query(main_dataset, last=True,
-                                  query={'sample_id_sample_manual_id':
-                                  sample_id},
-                                  cache=True, cache_expiry=2592000)
+            sample = main_dataset.get_data(query={'sample_id_sample_manual_id':
+                                                  sample_id},
+                                           cache=True, cache_expiry=2592000)[-1]
         except:
             raise Http404(u"Requested Sample (%(sample)s) does not exist."
                           % {'sample': sample_id})
 
     from collections import OrderedDict
-    sorted_sample = OrderedDict([(key, sample[key]) for key in sorted(sample.iterkeys())])
+    sorted_sample = OrderedDict([(key, sample[key])
+                                for key in sorted(sample.iterkeys())])
 
     results = soil_results(sample)
 
