@@ -60,7 +60,7 @@ def dashboard(request):
     try:
         nb_plots = int(main_dataset.count('found_top_qr', cache=True))
     except (BambooError, ErrorParsingBambooData):
-        nb_plots = None
+        nb_plots = 0
 
     # collected samples (ESTS1)
     try:
