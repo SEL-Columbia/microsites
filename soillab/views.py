@@ -44,8 +44,8 @@ def samples_list(request, search_string=None):
     main_dataset = CachedDataset(get_bamboo_dataset_id(project),
                                  connection=connection)
 
-    submissions_list = main_dataset.get_data(cache=True, cache_expiry=60)
-    submissions_list.sort(key=lambda x: x['end'], reverse=True)
+    submissions_list = main_dataset.get_data(cache=True, cache_expiry=60,
+                                             order_by='-end')
 
     paginator = FlynsarmyPaginator(submissions_list, 20, adjacent_pages=2)
 
