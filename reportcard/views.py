@@ -1,16 +1,17 @@
 
 from django.shortcuts import render, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger
-from pybamboo import ErrorRetrievingBambooData
+from pybamboo.connection import Connection
+from pybamboo.exceptions import BambooError
 
-from constants import (REPORTS_AGE_GROUPS, 
+from constants import (REPORTS_AGE_GROUPS,
                        REPORTS_READING_LEVELS, REPORTS_NUMERACY_LEVELS)
 from microsite.digg_paginator import FlynsarmyPaginator
 from microsite.decorators import project_required
 from microsite.barcode import (build_urlid_with,
                                short_id_from, detailed_id_dict, b64_qrcode)
 from microsite.models import Project
-from microsite.bamboo import count_submissions, bamboo_query
+
 from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_public_api_url,
                                get_formhub_form_datacsv_url,
@@ -25,6 +26,8 @@ from microsite.formhub import (get_formhub_form_url, get_formhub_form_api_url,
                                get_formhub_form_formxml_url,
                                get_formhub_form_formxls_url,
                                get_formhub_form_formjson_url)
+from microsite.bamboo import (CachedDataset,
+                              get_bamboo_url, get_bamboo_dataset_id)
 
 DEFAULT_PROJECT = Project.objects.get(slug='reportcard')
 
@@ -33,20 +36,24 @@ DEFAULT_PROJECT = Project.objects.get(slug='reportcard')
 def home(request):
     context = {'category': 'home'}
 
+    connection = Connection(get_bamboo_url(request.user.project))
+    main_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project),
+                                 connection=connection)
+    teacher_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project,
+                                                          is_registration=True),
+                                 connection=connection)
+
     # total number of submissions
     try:
-        nb_submissions = int(count_submissions(request.user.project,
-                                           u'general_information_age'))
-    except ErrorRetrievingBambooData as e:
+        nb_submissions = int(main_dataset.count(u'general_information_age'))
+    except BambooError as e:
         print(e)
         nb_submissions = None
 
     # total number of registered teachers
     try:
-        nb_teachers = count_submissions(request.user.project,
-                                        u'school_district',
-                                        is_registration=True)
-    except ErrorRetrievingBambooData:
+        nb_teachers = int(teacher_dataset.count(u'school_district'))
+    except BambooError:
         nb_teachers = None
 
     context.update({'nb_submissions': nb_submissions,
@@ -60,7 +67,10 @@ def list_submissions(request):
 
     context = {'category': 'submissions'}
 
-    submissions_list = bamboo_query(request.user.project)
+    connection = Connection(get_bamboo_url(request.user.project))
+    main_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project),
+                                 connection=connection)
+    submissions_list = main_dataset.get_data(cache=True)
 
     for submission in submissions_list:
         submission.update(detailed_id_dict(submission, prefix='teacher_'))
@@ -84,14 +94,18 @@ def list_submissions(request):
 def list_teachers(request):
 
     context = {'category': 'teachers',
-               'schoolcat': '%s|%s' 
+               'schoolcat': '%s|%s'
                % (request.user.project.slug, 'school_names')}
 
     # redirect to a teacher's page if jump_to matches one.
     jump_to = request.GET.get('jump_to', None)
 
-    teachers_list = bamboo_query(request.user.project,
-                                 is_registration=True)
+    connection = Connection(get_bamboo_url(request.user.project))
+    teacher_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project,
+                                                          is_registration=True),
+                                 connection=connection)
+
+    teachers_list = teacher_dataset.get_data(cache=True)
 
     ''' Not using the `group` method of bamboo here as it's innefiscient
         for our use case: it would request multiple inner-loops and uglify
@@ -119,7 +133,7 @@ def list_teachers(request):
         if teacher.get('school') in school_list:
             school_list.get(teacher.get('school')).append(teacher)
         else:
-            school_list[teacher.get('school')] = [teacher,]
+            school_list[teacher.get('school')] = [teacher, ]
 
     paginator = FlynsarmyPaginator(school_list.values(), 10, adjacent_pages=2)
 
@@ -152,7 +166,7 @@ def detail_teacher_bamboo(request, uid):
     ''' Report Card View leveraging bamboo aggregation '''
 
     context = {'category': 'teachers',
-               'schoolcat': '%s|%s' 
+               'schoolcat': '%s|%s'
                % (request.user.project.slug, 'school_names')}
 
     # retrieve short ID
@@ -163,14 +177,15 @@ def detail_teacher_bamboo(request, uid):
     # build barcode (identifier on submissions) from UID param.
     barcode = build_urlid_with(uid, sid)
 
+    connection = Connection(get_bamboo_url(request.user.project))
+    teacher_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project,
+                                                          is_registration=True),
+                                 connection=connection)
+
     # Retrieve teacher data from bamboo (1req)
-    teacher = bamboo_query(request.user.project,
-                           query={'barcode': barcode},
-                           first=True,
-                           is_registration=True)
+    teacher = teacher_dataset.get_data(query={'barcode': barcode})[0]
 
-
-    context.update({'teacher': teacher,})
+    context.update({'teacher': teacher})
 
     teacher.update(detailed_id_dict(teacher))
 
@@ -188,8 +203,15 @@ def detail_teacher_django(request, uid):
         All processing/grouping done in python. '''
 
     context = {'category': 'teachers',
-               'schoolcat': '%s|%s' 
+               'schoolcat': '%s|%s'
                % (request.user.project.slug, 'school_names')}
+
+    connection = Connection(get_bamboo_url(request.user.project))
+    main_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project),
+                                 connection=connection)
+    teacher_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project,
+                                                          is_registration=True),
+                                 connection=connection)
 
     def get_age_group(sub):
         ''' return age group (key str) of a given submission based on age'''
@@ -198,7 +220,6 @@ def detail_teacher_django(request, uid):
              in range(age_range[0], age_range[1] + 1)):
                 return key
         return u"all"
-
 
     def init_reports():
         ''' A reports container with initial values '''
@@ -217,7 +238,7 @@ def detail_teacher_django(request, uid):
 
         age_group = get_age_group(submission)
         sex = submission.get('general_information_sex')
-        level = submission.get('learning_levels_numeracy_nothing' if is_numeracy 
+        level = submission.get('learning_levels_numeracy_nothing' if is_numeracy
                                else 'learning_levels_reading_nothing')
 
         #       AGE GRP    SEX     LEVEL
@@ -246,7 +267,7 @@ def detail_teacher_django(request, uid):
             for sex, so in ago.items():
                 for level, lo in so.items():
                     reports[age_group][sex][level]['percent'] = \
-                                            pc(reports[age_group][sex][level], 
+                                            pc(reports[age_group][sex][level],
                                             reports[age_group][sex]['total'])
 
     def sort_reports(reports_dict):
@@ -284,7 +305,6 @@ def detail_teacher_django(request, uid):
 
         return reports
 
-
     # retrieve short ID
     sid = request.GET.get('short', None)
     if not sid:
@@ -294,23 +314,20 @@ def detail_teacher_django(request, uid):
     barcode = build_urlid_with(uid, sid)
 
     # Retrieve teacher data from bamboo (1req)
-    teacher = bamboo_query(request.user.project,
-                           query={'barcode': barcode},
-                           first=True,
-                           is_registration=True)
+    teacher = teacher_dataset.get_data(query={'barcode': barcode})[0]
     teacher.update(detailed_id_dict(teacher))
 
     # retrieve list of submissions from bamboo (1req)
-    submissions = bamboo_query(request.user.project,
+    submissions = main_dataset.get_data(
                                query={'teacher_barcode': barcode},
-                               select={'general_information_age': 1,
-                                        'general_information_sex': 1,
-                                        'learning_levels_numeracy_nothing': 1,
-                                        'learning_levels_reading_nothing': 1,
-                                        'school_junior_secondary': 1,
-                                        'school_primary': 1,
-                                        'school_senior_secondary': 1,
-                                        'schooling_status_grades': 1})
+                               select=['general_information_age',
+                                        'general_information_sex',
+                                        'learning_levels_numeracy_nothing',
+                                        'learning_levels_reading_nothing',
+                                        'school_junior_secondary',
+                                        'school_primary',
+                                        'school_senior_secondary',
+                                        'schooling_status_grades'])
 
     # initialize containers for reading report and numeracy report.
     reading_dict = init_reports()
@@ -344,10 +361,11 @@ def card_teacher(request, uid):
     sid = short_id_from(uid)
     urlid = build_urlid_with(uid, sid)
 
-    teacher = bamboo_query(request.user.project,
-                           query={'barcode': urlid},
-                           first=True,
-                           is_registration=True)
+    connection = Connection(get_bamboo_url(request.user.project))
+    teacher_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project,
+                                                          is_registration=True),
+                                 connection=connection)
+    teacher = teacher_dataset.get_data(query={'barcode': urlid})[0]
 
     teacher.update(detailed_id_dict(teacher))
     teacher.update({'qrcode': b64_qrcode(urlid)})
@@ -365,7 +383,7 @@ def form(request):
     context.update({
         'form_url': get_formhub_form_url(request.user.project),
         'form_api_url': get_formhub_form_api_url(request.user.project),
-        'form_public_api_url': 
+        'form_public_api_url':
                           get_formhub_form_public_api_url(request.user.project),
         'form_datacsv_url': get_formhub_form_datacsv_url(request.user.project),
         'form_dataxls_url': get_formhub_form_dataxls_url(request.user.project),
@@ -373,15 +391,15 @@ def form(request):
         'form_datazip_url': get_formhub_form_datazip_url(request.user.project),
         'form_gdocs_url': get_formhub_form_gdocs_url(request.user.project),
         'form_map_url': get_formhub_form_map_url(request.user.project),
-        'form_instance_url': 
+        'form_instance_url':
                             get_formhub_form_instance_url(request.user.project),
-        'form_dataentry_url': 
+        'form_dataentry_url':
                            get_formhub_form_dataentry_url(request.user.project),
-        'form_dataview_url': 
+        'form_dataview_url':
                             get_formhub_form_dataview_url(request.user.project),
         'form_formxml_url': get_formhub_form_formxml_url(request.user.project),
         'form_formxls_url': get_formhub_form_formxls_url(request.user.project),
-        'form_formjson_url': 
+        'form_formjson_url':
                             get_formhub_form_formjson_url(request.user.project),
         })
 

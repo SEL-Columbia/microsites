@@ -5,9 +5,11 @@
 from datetime import datetime
 
 from pybamboo.connection import Connection
-from pybamboo.exceptions import BambooError, ErrorParsingBambooData
+from pybamboo.exceptions import ErrorParsingBambooData
 
-from microsite.bamboo import get_bamboo_dataset_id, get_bamboo_url, CachedDataset
+from microsite.bamboo import (get_bamboo_dataset_id,
+                              get_bamboo_url, CachedDataset)
+from microsite.utils import get_option
 
 AN_HOUR = 60 * 60
 A_DAY = AN_HOUR * 24
@@ -86,12 +88,13 @@ class ESTSSample(object):
         QR_80_100: u"80-100"
     }
 
-    def __init__(self, sample_id):
+    def __init__(self, sample_id, project):
 
         self.sample_id = sample_id
         self._position = None
         self._status = None
         self._events = {}
+        self.project = project
 
         self.retrieve_datasets()
 
@@ -100,42 +103,61 @@ class ESTSSample(object):
     def __str__(self):
         return self.sample_id
 
-    def retrieve_datasets(self):
-        connection = Connection()
+    @classmethod
+    def all_datasets(cls, project):
 
-        self.plot_dataset = CachedDataset(u'ddc7943d6d284b7dadc1b02de39f33eb',
-                                          connection=connection)
-        self.datasets = {self.STATUS_SENT_TO_PC:
-                            CachedDataset(u'1a889141be2d4264b4b4bb77b33d330d',
-                                          connection=connection),
-                         self.STATUS_ARRIVED_AT_PC:
-                             CachedDataset(u'bf56cd8eb1054df287dc0a1350677231',
-                                           connection=connection),
-                         self.STATUS_SENT_TO_NSTC:
-                             CachedDataset(u'33a6530d513242d9af9683146e69a5a3',
-                                           connection=connection),
-                         self.STATUS_ARRIVED_AT_NSTC:
-                             CachedDataset(u'd32110b1706945e7ab276f6e7e23b194',
-                                           connection=connection),
-                         self.STATUS_SENT_TO_ARCHIVE:
-                             CachedDataset(u'',
-                                           connection=connection),
-                         self.STATUS_ARRIVED_AT_ARCHIVE:
-                             CachedDataset(u'3021738ddad04a8d9195db5bd119a5c8',
-                                           connection=connection)}
+        # short-circuit dataset retrieval until bamboo join works
+        def get_option(project, dataset):
+            return {'ests1_dataset': u'1a889141be2d4264b4b4bb77b33d330d',
+                    'ests2_dataset': u'bf56cd8eb1054df287dc0a1350677231',
+                    'ests3_dataset': u'33a6530d513242d9af9683146e69a5a3',
+                    'ests4_dataset': u'd32110b1706945e7ab276f6e7e23b194',
+                    'ests5_dataset': u'x',
+                    'ests6_dataset': u'3021738ddad04a8d9195db5bd119a5c8',
+
+            }.get(dataset)
+
+        def get_bamboo_dataset_id(project):
+            return u'ddc7943d6d284b7dadc1b02de39f33eb'
+
+        connection = Connection(get_bamboo_url(project))
+        return {cls.STATUS_COLLECTED:
+                    CachedDataset(get_bamboo_dataset_id(project),
+                                  connection=connection),
+                cls.STATUS_SENT_TO_PC:
+                    CachedDataset(get_option(project, 'ests1_dataset'),
+                                  connection=connection),
+                 cls.STATUS_ARRIVED_AT_PC:
+                     CachedDataset(get_option(project, 'ests2_dataset'),
+                                   connection=connection),
+                 cls.STATUS_SENT_TO_NSTC:
+                     CachedDataset(get_option(project, 'ests3_dataset'),
+                                   connection=connection),
+                 cls.STATUS_ARRIVED_AT_NSTC:
+                     CachedDataset(get_option(project, 'ests4_dataset'),
+                                   connection=connection),
+                 cls.STATUS_SENT_TO_ARCHIVE:
+                     CachedDataset(get_option(project, 'ests5_dataset'),
+                                   connection=connection),
+                 cls.STATUS_ARRIVED_AT_ARCHIVE:
+                     CachedDataset(get_option(project, 'ests6_dataset'),
+                                   connection=connection)}
+
+    def retrieve_datasets(self):
+        self.datasets = self.all_datasets(self.project)
 
     def query_status(self):
 
         # find out plot to make sure we have a valid sample_id
         for position in self.POSITIONS.keys():
-            matching_plots = self.plot_dataset \
+            matching_plots = self.datasets[self.STATUS_COLLECTED] \
                                  .get_data(query={u'found_%s' % position:
                                                     self.sample_id},
                                            order_by='-end',
                                            limit=1,
                                            cache=True,
                                            cache_expiry=A_MONTH)
-            if matching_plots and len(matching_plots):
+            if isinstance(matching_plots, list) and len(matching_plots):
                 self._position = position
                 self._plot = ESTSPlot(matching_plots[0])
                 break
@@ -154,7 +176,7 @@ class ESTSSample(object):
                                                 cache_expiry=A_DAY)
             except ErrorParsingBambooData:
                 continue
-            if matching_events and len(matching_events):
+            if isinstance(matching_events, list) and len(matching_events):
                 self._events[status] = matching_events[0]
                 self._events[status].update({'status': status})
                 if isinstance(self._events[status]['end_time'], (int, basestring)):
