@@ -319,7 +319,8 @@ def detail_teacher_django(request, uid):
 
     # retrieve list of submissions from bamboo (1req)
     submissions = main_dataset.get_data(
-                               query={'teacher_barcode': barcode},
+                               query={'$or': [{'teacher_barcode': barcode},
+                                              {'teacher_fallback_ID': sid}]},
                                select=['general_information_age',
                                         'general_information_sex',
                                         'learning_levels_numeracy_nothing',
