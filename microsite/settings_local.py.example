@@ -79,8 +79,9 @@ IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
 #     DEFAULT_APP = 'reportcard'
 #     IDGEN_BASE_URI = u'http://litreportcards.modilabs.org'
 #     # IDGEN_FORMAT = '%(base_url)s/teachers/%(uuid)s?short=%(shortid)s'
+#     IDGEN_FORMAT = '%(shortid)s'
 #     KEY_NAME_NAMESPACES = [('school_names', u"School Names"),
-#                            ('classes_taught', u"Classes taught")]# 
+#                            ('classes_taught', u"Classes taught")]#
 # elif DEFAULT_APP == 'soillab':
 #     SECRET_KEY = 'change this'
 #     INSTALLED_APPS_EXTRA = ['soillab']
