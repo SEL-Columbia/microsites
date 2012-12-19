@@ -24,7 +24,7 @@ from microsite.bamboo import (get_bamboo_dataset_id, get_bamboo_url,
                               CachedDataset)
 
 
-DEFAULT_IDS = 5
+DEFAULT_IDS = 6
 
 
 class JSONTextInput(forms.TextInput):
@@ -78,7 +78,8 @@ def idgen(request, nb_ids=DEFAULT_IDS):
     all_ids = []
     for i in xrange(0, nb_ids):
         # this is a tuple of (ID, B64_QRPNG)
-        all_ids.append(b64_random_qrcode(as_tuple=True, as_url=True))
+        all_ids.append(b64_random_qrcode(as_tuple=True,
+                                         as_url=True, scale=2.0))
 
     context.update({'generated_ids': all_ids})
 

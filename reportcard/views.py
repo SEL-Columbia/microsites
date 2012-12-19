@@ -369,7 +369,7 @@ def card_teacher(request, uid):
     teacher = teacher_dataset.get_data(query={'barcode': urlid})[0]
 
     teacher.update(detailed_id_dict(teacher))
-    teacher.update({'qrcode': b64_qrcode(urlid)})
+    teacher.update({'qrcode': b64_qrcode(urlid, scale=2.0)})
 
     context.update({'teacher': teacher})
 
