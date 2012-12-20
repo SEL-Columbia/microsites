@@ -173,6 +173,16 @@ def get_formhub_bulk_submission_url(project, is_registration=False):
 
 
 def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
+    formhub_submission_url = get_formhub_submission_url(project)
+    bulk_submission_url = get_formhub_bulk_submission_url(project)
+    return submit_xml_forms_formhub_raw(formhub_submission_url, xforms=xforms,
+                                        as_bulk=as_bulk,
+                                        attachments=attachments,
+                                        bulk_submission_url=bulk_submission_url)
+
+
+def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
+                                 attachments=[], bulk_submission_url=u''):
 
     # allow single form parameter
     if not isinstance(xforms, list):
@@ -203,7 +213,7 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
 
         # upload the zip file
         try:
-            req = requests.post(get_formhub_bulk_submission_url(project),
+            req = requests.post(bulk_submission_url,
                                     files={'zip_submission_file':
                                            (zip_file,
                                             open(zip_file))},
@@ -220,12 +230,9 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
         print(req.text)
         return True
 
-
-
     # not bulk, submissions one by one
     exception = ErrorMultipleUploadingDataToFormhub()
 
-    formhub_submission_url = get_formhub_submission_url(project)
     for index, form_xml in enumerate(xforms):
         if not form_xml:
             continue
@@ -239,7 +246,7 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
             req_files = {'xml_submission_file': ('form.xml', form_xml)}
             for num, attachment in enumerate(attached):
                 req_files.update({'form_attachment_%d' % num: attachment})
-            req = requests.post(formhub_submission_url,
+            req = requests.post(submission_url,
                                 files=req_files,
                                 timeout=FORMHUB_UPLOAD_TIMEOUT)
         except requests.exceptions.Timeout as e:
