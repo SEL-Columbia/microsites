@@ -30,6 +30,10 @@ from microsite.bamboo import (CachedDataset,
                               get_bamboo_url, get_bamboo_dataset_id)
 
 DEFAULT_PROJECT = Project.objects.get(slug='reportcard')
+VLONG = 60 * 60 * 24 * 30 * 6  # 6months
+SHORT = 60 * 60  # 1 hour
+VSHORT = 60 * 15  # 1 hour
+MEDIUM = 60 * 60 * 24  # 1 day
 
 
 @project_required(guests=DEFAULT_PROJECT)
@@ -70,7 +74,7 @@ def list_submissions(request):
     connection = Connection(get_bamboo_url(request.user.project))
     main_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project),
                                  connection=connection)
-    submissions_list = main_dataset.get_data(cache=True)
+    submissions_list = main_dataset.get_data(cache=True, cache_expiry=VSHORT)
 
     for submission in submissions_list:
         submission.update(detailed_id_dict(submission, prefix='teacher_'))
@@ -105,7 +109,7 @@ def list_teachers(request):
                                                           is_registration=True),
                                  connection=connection)
 
-    teachers_list = teacher_dataset.get_data(cache=True)
+    teachers_list = teacher_dataset.get_data(cache=True, cache_expiry=MEDIUM)
 
     ''' Not using the `group` method of bamboo here as it's innefiscient
         for our use case: it would request multiple inner-loops and uglify
@@ -183,7 +187,8 @@ def detail_teacher_bamboo(request, uid):
                                  connection=connection)
 
     # Retrieve teacher data from bamboo (1req)
-    teacher = teacher_dataset.get_data(query={'barcode': barcode})[0]
+    teacher = teacher_dataset.get_data(query={'barcode': barcode},
+                                       cache=True, cache_expiry=VLONG)[0]
 
     context.update({'teacher': teacher})
 
@@ -310,17 +315,26 @@ def detail_teacher_django(request, uid):
     if not sid:
         sid = short_id_from(uid)
 
-    # build barcode (identifier on submissions) from UID param.
-    barcode = build_urlid_with(uid, sid)
+    # if we don't have an UID, find out teacher from SID.
+    if uid == sid:
+        barcodes = {}
+        for bc in teacher_dataset.get_data(select=['barcode'],
+                                           cache=True, cache_expiry=VSHORT):
+            barcodes[short_id_from(bc)] = bc
+        barcode = barcodes.get(sid, '')
+    else:
+        barcode = uid
 
     # Retrieve teacher data from bamboo (1req)
-    teacher = teacher_dataset.get_data(query={'barcode': barcode})[0]
+    teacher = teacher_dataset.get_data(query={'barcode': barcode},
+                                       cache=True, cache_expiry=VLONG)[0]
     teacher.update(detailed_id_dict(teacher))
 
     # retrieve list of submissions from bamboo (1req)
     submissions = main_dataset.get_data(
                                query={'$or': [{'teacher_barcode': barcode},
-                                              {'teacher_fallback_ID': sid}]},
+                                              {'teacher_fallback_id':
+                                              {'$regex':sid, '$options':'i'}}]},
                                select=['general_information_age',
                                         'general_information_sex',
                                         'learning_levels_numeracy_nothing',
@@ -359,17 +373,15 @@ def card_teacher(request, uid):
 
     context = {'category': 'teachers'}
 
-    sid = short_id_from(uid)
-    urlid = build_urlid_with(uid, sid)
-
     connection = Connection(get_bamboo_url(request.user.project))
     teacher_dataset = CachedDataset(get_bamboo_dataset_id(request.user.project,
                                                           is_registration=True),
-                                 connection=connection)
-    teacher = teacher_dataset.get_data(query={'barcode': urlid})[0]
+                                    connection=connection)
+    teacher = teacher_dataset.get_data(query={'barcode': uid},
+                                       cache=True, cache_expiry=VLONG)[0]
 
     teacher.update(detailed_id_dict(teacher))
-    teacher.update({'qrcode': b64_qrcode(urlid, scale=2.0)})
+    teacher.update({'qrcode': b64_qrcode(uid, scale=2.0)})
 
     context.update({'teacher': teacher})
 

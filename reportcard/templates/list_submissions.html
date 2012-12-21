@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load mstag %}
 
 {% block page_title %}List of submissions{% endblock %}
 
@@ -11,7 +12,8 @@
 </thead>
 <tbody>
 {% for submission in submissions %}
-<tr><td><a href="{% url teacher submission.teacher_uid_ %}">{{ submission.teacher_sid_ }}</a></td><td>{{ submission.general_information_age }}</td><td>{{ submission.general_information_sex }}</td><td>{{ submission.learning_levels_numeracy_nothing }}</td><td>{{ submission.learning_levels_reading_nothing }}</td></tr>
+<tr><td>{% if submission.teacher_fallback_id %}<a href="{% url teachers %}?jump_to={{ submission.teacher_fallback_id|upper }}">{{ submission.teacher_fallback_id|upper }}</a>{% else %}<a href="{% url teacher submission.teacher_uid_ %}">{{ submission.teacher_sid_ }}</a>{% endif %}
+</td><td>{{ submission.general_information_age }}</td><td>{{ submission.general_information_sex|KeyName:"reportcard|choices" }}</td><td>{{ submission.learning_levels_numeracy_nothing|KeyName:"reportcard|choices" }}</td><td>{{ submission.learning_levels_reading_nothing|KeyName:"reportcard|choices" }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
