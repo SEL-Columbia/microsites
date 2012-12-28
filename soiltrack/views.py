@@ -1,13 +1,19 @@
 # encoding=utf-8
 
+import re
+import json
+import copy
 from datetime import datetime, timedelta
 
 from django.shortcuts import render
 # from pybamboo import ErrorRetrievingBambooData
 from django.contrib import messages
-from django.http import Http404
+from django.http import HttpResponse, Http404
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from pybamboo.connection import Connection
 from pybamboo.exceptions import BambooError, ErrorParsingBambooData
+from dict2xml import dict2xml
 
 from microsite.views import options as ms_options
 from microsite.utils import get_option
@@ -16,6 +22,9 @@ from microsite.views import DEFAULT_IDS
 from microsite.models import Project
 from microsite.barcode import b64_qrcode
 from microsite.decorators import project_required
+from microsite.formhub import (submit_xml_forms_formhub,
+                               ErrorUploadingDataToFormhub,
+                               ErrorMultipleUploadingDataToFormhub)
 from microsite.bamboo import (get_bamboo_dataset_id,
                               get_bamboo_url, CachedDataset)
 
@@ -139,7 +148,7 @@ def dashboard(request):
             sample = ESTSSample(event.get(u'scan_soil_id'),
                                 project=request.user.project)
             last_events.append(sample)
-        except ValueError as e:
+        except ValueError:
             pass
 
     context.update({'nb_plots': nb_plots,
@@ -300,3 +309,184 @@ def sample_detail(request):
                     'sample': sample})
 
     return render(request, 'sample_detail.html', context)
+
+
+@require_POST
+@csrf_exempt
+def steps_form_splitter(request, project_slug='soiltrack'):
+    ''' Unified (ESTS_Steps) Form to individual ones (submits to FH)
+
+        1. Receives a JSON POST from formhub containing x samples barcode
+        2. For each sample, prepare a step-specific submission
+        3. Submits the resulting XForms to formhub. '''
+
+    # we need a project to guess formhub URL
+    try:
+        project = Project.objects.get(slug=project_slug)
+    except:
+        project = Project.objects.all()[0]
+
+    try:
+        jsform = json.loads(request.raw_post_data)
+    except:
+        return HttpResponse(u"Unable to parse JSON data", status=400)
+
+    # we have a json dict containing all fields.
+    # we need to:
+    #   1. explode the form into x ones from soil_id
+    #   2. find out step
+    #   2. rename all fields except barcode to prefix with step
+
+    forms = []
+    step = jsform['step']
+
+    for soil_field in jsform['scan']:
+        # looping on repeat field `scan` which contains `soil_id`
+        barcode = soil_field['scan/soil_id']
+
+        # duplicate whole form to grab meta data.
+        form = copy.copy(jsform)
+
+        # rename all fields but `_` starting ones
+        keys = form.keys()
+        for key in keys:
+            # _ starting keys are internal.
+            if key.startswith('_'):
+                continue
+            form['%s_%s' % (step, key)] = form[key]
+            # delete key once duplicated
+            form.pop(key)
+        # remove repeat section and replace with `barcode`
+        form.pop('scan')
+        form['barcode'] = barcode
+
+        forms.append(form)
+    del(jsform)
+
+    def json2xform(jsform):
+        # changing the form_id to match correct Step
+        dd = {'form_id': u'ESTS_%s' % jsform.get(u'step', u'').title()}
+        xml_head = u"<?xml version='1.0' ?><%(form_id)s id='%(form_id)s'>" % dd
+        xml_tail = u"</%(form_id)s>" % dd
+
+        # remove the parent's instance ID and step
+        try:
+            jsform['meta'].pop('instanceID')
+            jsform.pop('step')
+        except KeyError:
+            pass
+
+        for field in jsform.keys():
+            # treat field starting with underscore are internal ones.
+            # and remove them
+            if field.startswith('_'):
+                jsform.pop(field)
+
+        return xml_head + dict2xml(jsform) + xml_tail
+
+    xforms = [json2xform(form) for form in forms]
+
+    try:
+        submit_xml_forms_formhub(project, xforms, as_bulk=False)
+    except (ErrorUploadingDataToFormhub,
+            ErrorMultipleUploadingDataToFormhub) as e:
+        return HttpResponse(u"%(intro)s\n%(detail)s"
+                            % {'intro': e,
+                               'detail': e.details()}, status=502)
+    except Exception as e:
+        return HttpResponse(str(e), status=500)
+
+    return HttpResponse('OK', status=201)
+
+
+@require_POST
+@csrf_exempt
+def main_form_splitter(request, project_slug='soiltrack'):
+    ''' Unified EthioSIS_ET Form to per-sample (ESTS_ET) ones (submits to FH)
+
+        1. Receives a JSON POST from formhub containing qr_* barcodes
+        2. For each level (qr), prepare a step-specific submission
+        3. Submits the resulting XForms to formhub. '''
+
+    # we need a project to guess formhub URL
+    try:
+        project = Project.objects.get(slug=project_slug)
+    except:
+        project = Project.objects.all()[0]
+
+    try:
+        jsform = json.loads(request.raw_post_data)
+    except:
+        return HttpResponse(u"Unable to parse JSON data", status=400)
+
+    positions = {
+        'top_qr': None,
+        'sub_qr': None,
+        'qr_0_20': None,
+        'qr_20_40': None,
+        'qr_40_60': None,
+        'qr_60_80': None,
+        'qr_80_100': None,
+    }
+
+    forms = []
+
+    for key in positions.keys():
+        positions[key] = jsform.get('found_%s' % key, None)
+        if not re.match(r'[a-zA-Z0-9\_]+', positions[key]):
+            positions[key] = None
+
+    for position in positions.keys():
+        if not positions[position]:
+            continue
+
+        # extract sample identifier
+        barcode = jsform['found_%s' % position]
+
+        # duplicate whole form to grab meta data.
+        form = copy.copy(jsform)
+
+        # delete all position keys
+        for key in positions.keys():
+            form.pop(key)
+
+        # add `barcode` field
+        form['barcode'] = barcode
+
+        forms.append(form)
+    del(jsform)
+
+    def json2xform(jsform):
+        # changing the form_id to match correct Step
+        dd = {'form_id': u'ESTS_ET_sample'}
+        xml_head = u"<?xml version='1.0' ?><%(form_id)s id='%(form_id)s'>" % dd
+        xml_tail = u"</%(form_id)s>" % dd
+
+        # remove the parent's instance ID and step
+        try:
+            jsform['meta'].pop('instanceID')
+            jsform.pop('step')
+        except KeyError:
+            pass
+
+        for field in jsform.keys():
+            # treat field starting with underscore are internal ones.
+            # and remove them
+            if field.startswith('_'):
+                jsform.pop(field)
+
+        return xml_head + dict2xml(jsform) + xml_tail
+
+    xforms = [json2xform(form) for form in forms]
+
+    try:
+        submit_xml_forms_formhub(project, xforms, as_bulk=False)
+    except (ErrorUploadingDataToFormhub,
+            ErrorMultipleUploadingDataToFormhub) as e:
+        return HttpResponse(u"%(intro)s\n%(detail)s"
+                            % {'intro': e,
+                               'detail': e.details()}, status=502)
+    except Exception as e:
+        return HttpResponse(str(e), status=500)
+
+    return HttpResponse('OK', status=201)
