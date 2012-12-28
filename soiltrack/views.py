@@ -16,7 +16,7 @@ from pybamboo.exceptions import BambooError, ErrorParsingBambooData
 from dict2xml import dict2xml
 
 from microsite.views import options as ms_options
-from microsite.utils import get_option
+from microsite.utils import get_option, nest_flat_dict
 from microsite.bamboo import raw_getset_bamboo_dataset
 from microsite.views import DEFAULT_IDS
 from microsite.models import Project
@@ -328,6 +328,8 @@ def steps_form_splitter(request, project_slug='soiltrack'):
 
     try:
         jsform = json.loads(request.raw_post_data)
+        # re-organize JSON to match semantic
+        nest_flat_dict(jsform)
     except:
         return HttpResponse(u"Unable to parse JSON data", status=400)
 
@@ -338,11 +340,11 @@ def steps_form_splitter(request, project_slug='soiltrack'):
     #   2. rename all fields except barcode to prefix with step
 
     forms = []
-    step = jsform['step']
+    step = jsform[u'step']
 
-    for soil_field in jsform['scan']:
+    for soil_field in jsform[u'scan']:
         # looping on repeat field `scan` which contains `soil_id`
-        barcode = soil_field['scan/soil_id']
+        barcode = soil_field[u'scan/soil_id']
 
         # duplicate whole form to grab meta data.
         form = copy.copy(jsform)
@@ -353,26 +355,27 @@ def steps_form_splitter(request, project_slug='soiltrack'):
             # _ starting keys are internal.
             if key.startswith('_'):
                 continue
-            form['%s_%s' % (step, key)] = form[key]
+            form.update({'%s_%s' % (step, key): form[key]})
             # delete key once duplicated
             form.pop(key)
         # remove repeat section and replace with `barcode`
-        form.pop('scan')
-        form['barcode'] = barcode
+        form.pop(u'%s_scan' % step)
+        form.update({u'barcode': barcode})
 
         forms.append(form)
     del(jsform)
 
     def json2xform(jsform):
         # changing the form_id to match correct Step
-        dd = {'form_id': u'ESTS_%s' % jsform.get(u'step', u'').title()}
+        dd = {'form_id': u'ESTS_%s' % step.title()}
         xml_head = u"<?xml version='1.0' ?><%(form_id)s id='%(form_id)s'>" % dd
         xml_tail = u"</%(form_id)s>" % dd
 
         # remove the parent's instance ID and step
         try:
-            jsform['meta'].pop('instanceID')
-            jsform.pop('step')
+            jsform['%s_meta' % step].pop('instanceID')
+            # jsform['%s_formhub' % step].pop('uuid')
+            jsform.pop('%s_step' % step)
         except KeyError:
             pass
 
@@ -416,6 +419,8 @@ def main_form_splitter(request, project_slug='soiltrack'):
 
     try:
         jsform = json.loads(request.raw_post_data)
+        # re-organize JSON to match semantic
+        nest_flat_dict(jsform)
     except:
         return HttpResponse(u"Unable to parse JSON data", status=400)
 

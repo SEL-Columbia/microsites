@@ -21,7 +21,7 @@ class ProjectUnconfigured(Exception):
         self.project = project
 
 
-def download_with_djangologin(url, login_url, login=None, 
+def download_with_djangologin(url, login_url, login=None,
                               password=None, ext=''):
     ''' Download a URI from a website using Django by loging-in first
 
@@ -95,7 +95,7 @@ def load_json(json_str, object_hook=bamboo_datetime_hook):
 
 def get_option(project, option):
     from microsite.models import Option
-    
+
     try:
         return Option.objects.get(project=project, key=option).value
     except:
@@ -105,7 +105,7 @@ def get_option(project, option):
 def get_name_for(project, namespace, key):
     from microsite.models import KeyNamePair
     try:
-        return KeyNamePair.objects.get(project=project, 
+        return KeyNamePair.objects.get(project=project,
                                        namespace=namespace, key=key).name
     except KeyNamePair.DoesNotExist:
         return key
@@ -134,3 +134,23 @@ def import_csv_content_into_namespace(project, namespace, csv_content):
 
     # save now that we haven't exploded
     [knp.save() for knp in objects]
+
+
+def nest_flat_dict(d):
+    """ Tranforms dict w/t FH-jsoned keys to FH XML sematic compliant
+
+        /!\ in-place transformation.
+        FH/JSON sends nodes as {'parent/child': value} syntax in a flat dict.
+        This converts it to {parent: {child: value}}
+        Makes is easier to convert it back to XML for submission """
+    keys = d.keys()
+    for key in keys:
+        if not '/' in key:
+            continue
+        parts = key.split('/')
+        md = d
+        for part_index, part in enumerate(parts):
+            value = d[key] if part_index == len(parts) - 1 else {}
+            md.update({part: value})
+            md = md[part]
+        d.pop(key)
