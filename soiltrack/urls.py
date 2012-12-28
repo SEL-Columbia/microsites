@@ -19,4 +19,8 @@ urlpatterns = patterns('',
     url(r'^pc/(?P<pc_slug>[a-zA-Z0-9\-\_]+)?$',
         views.processing_center, name='pc'),
     url(r'^sample/?$', views.sample_detail, name='sample_detail'),
+    url(r'main_form_splitter\?project=(?P<project_slug>[a-z\_\-0-9]+)$',
+        views.main_form_splitter, name='main_form_splitter'),
+    url(r'steps_form_splitter\?project=(?P<project_slug>[a-z\_\-0-9]+)$',
+        views.steps_form_splitter, name='steps_form_splitter'),
 )
