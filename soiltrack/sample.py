@@ -20,7 +20,14 @@ A_YEAR = A_DAY * 365
 class ESTSPlot(dict):
 
     def ident(self):
-        return (self.iquadrant, self.icluster, self.iplot)
+        return (self.iblock, self.iquadrant, self.icluster, self.iplot)
+
+    @property
+    def iblock(self):
+        try:
+            return int(self['block'])
+        except:
+            return self['block']
 
     @property
     def iquadrant(self):
@@ -235,4 +242,4 @@ class ESTSSample(object):
         return self.plot.ident()
 
     def ident(self):
-        return u'%s.%s.%s' % self.plot_ident() + '.' + self.depth
+        return u'%s.%s.%s.%s' % self.plot_ident() + '.' + self.depth
