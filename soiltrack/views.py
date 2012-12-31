@@ -446,7 +446,7 @@ def main_form_splitter(request, project_slug='soiltrack'):
             continue
 
         # extract sample identifier
-        barcode = jsform['found_%s' % position]
+        barcode = positions.get(position)
 
         # duplicate whole form to grab meta data.
         form = copy.copy(jsform)
@@ -470,7 +470,6 @@ def main_form_splitter(request, project_slug='soiltrack'):
         # remove the parent's instance ID and step
         try:
             jsform['meta'].pop('instanceID')
-            jsform.pop('step')
         except KeyError:
             pass
 
