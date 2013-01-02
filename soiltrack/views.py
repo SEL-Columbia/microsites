@@ -3,6 +3,7 @@
 import re
 import json
 import copy
+import uuid
 from datetime import datetime, timedelta
 
 from django.shortcuts import render
@@ -435,9 +436,10 @@ def main_form_splitter(request, project_slug='soiltrack'):
     }
 
     forms = []
+    found = bool(len(jsform.get(u'found', {})) > 1)
 
     for key in positions.keys():
-        positions[key] = jsform.get('found_%s' % key, None)
+        positions[key] = jsform.get(u'found', {}).get('%s' % key, '')
         if not re.match(r'[a-zA-Z0-9\_]+', positions[key]):
             positions[key] = None
 
@@ -453,12 +455,25 @@ def main_form_splitter(request, project_slug='soiltrack'):
 
         # delete all position keys
         for key in positions.keys():
-            form.pop(key)
+            try:
+                form[u'found'].pop(key)
+            except KeyError:
+                pass
 
         # add `barcode` field
-        form['barcode'] = barcode
+        form[u'found']['barcode'] = barcode
+        form[u'found']['position'] = position
 
         forms.append(form)
+
+    if not found:
+        # make a single submission since we don't have barcodes
+        form = copy.copy(jsform)
+        form[u'found'][u'barcode'] = u'n/a__%s' % uuid.uuid4().hex
+        form[u'found'][u'position'] = u'not_found'
+        forms.append(form)
+
+    # free some mem
     del(jsform)
 
     def json2xform(jsform):
@@ -469,7 +484,7 @@ def main_form_splitter(request, project_slug='soiltrack'):
 
         # remove the parent's instance ID and step
         try:
-            jsform['meta'].pop('instanceID')
+            jsform[u'meta'].pop('instanceID')
         except KeyError:
             pass
 

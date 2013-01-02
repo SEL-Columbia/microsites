@@ -150,7 +150,7 @@ def nest_flat_dict(d):
         parts = key.split('/')
         md = d
         for part_index, part in enumerate(parts):
-            value = d[key] if part_index == len(parts) - 1 else {}
+            value = d[key] if part_index == len(parts) - 1 else md.get(part, {})
             md.update({part: value})
             md = md[part]
         d.pop(key)
