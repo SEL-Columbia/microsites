@@ -348,7 +348,7 @@ def steps_form_splitter(request, project_slug='soiltrack'):
         barcode = soil_field[u'scan/soil_id']
 
         # duplicate whole form to grab meta data.
-        form = copy.copy(jsform)
+        form = copy.deepcopy(jsform)
 
         # rename all fields but `_` starting ones
         keys = form.keys()
@@ -440,7 +440,7 @@ def main_form_splitter(request, project_slug='soiltrack'):
 
     for key in positions.keys():
         positions[key] = jsform.get(u'found', {}).get('%s' % key, '')
-        if not re.match(r'[a-zA-Z0-9\_]+', positions[key]):
+        if not re.match(r'[a-zA-Z0-9\_\-]+', positions[key]):
             positions[key] = None
 
     for position in positions.keys():
@@ -451,7 +451,7 @@ def main_form_splitter(request, project_slug='soiltrack'):
         barcode = positions.get(position)
 
         # duplicate whole form to grab meta data.
-        form = copy.copy(jsform)
+        form = copy.deepcopy(jsform)
 
         # delete all position keys
         for key in positions.keys():
@@ -461,14 +461,14 @@ def main_form_splitter(request, project_slug='soiltrack'):
                 pass
 
         # add `barcode` field
-        form[u'found']['barcode'] = barcode
-        form[u'found']['position'] = position
+        form[u'found'][u'barcode'] = barcode
+        form[u'found'][u'position'] = position
 
         forms.append(form)
 
     if not found:
         # make a single submission since we don't have barcodes
-        form = copy.copy(jsform)
+        form = copy.deepcopy(jsform)
         form[u'found'][u'barcode'] = u'n/a__%s' % uuid.uuid4().hex
         form[u'found'][u'position'] = u'not_found'
         forms.append(form)
