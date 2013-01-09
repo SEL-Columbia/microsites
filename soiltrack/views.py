@@ -461,16 +461,16 @@ def main_form_splitter(request, project_slug='soiltrack'):
                 pass
 
         # add `barcode` field
-        form[u'found'][u'barcode'] = barcode
-        form[u'found'][u'position'] = position
+        form[u'barcode'] = barcode
+        form[u'position'] = position
 
         forms.append(form)
 
     if not found:
         # make a single submission since we don't have barcodes
         form = copy.deepcopy(jsform)
-        form[u'found'][u'barcode'] = u'n/a__%s' % uuid.uuid4().hex
-        form[u'found'][u'position'] = u'not_found'
+        form[u'barcode'] = u'n/a__%s' % uuid.uuid4().hex
+        form[u'position'] = u'not_found'
         forms.append(form)
 
     # free some mem

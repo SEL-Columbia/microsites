@@ -202,7 +202,7 @@ def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
 
                 # create a temporary file for each form
                 fileh, form_file = tempfile.mkstemp(suffix='.xml')
-                os.write(fileh, form_xml)
+                os.write(fileh, form_xml.encode('utf-8'))
                 os.close(fileh)
                 # add the temp xml file to the zip file
                 zfile.write(form_file)
