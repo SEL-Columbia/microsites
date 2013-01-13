@@ -223,6 +223,8 @@ def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
                                               u"%ds." % FORMHUB_UPLOAD_TIMEOUT)
         except Exception as e:
             raise ErrorUploadingDataToFormhub(u"Unable to send: %r" % e.message)
+        finally:
+            os.close(ziph)
 
         if not req.status_code in (200, 201, 202):
             raise ErrorUploadingDataToFormhub(u'Unable to submit ZIP: %s'
