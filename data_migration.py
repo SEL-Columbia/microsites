@@ -9,13 +9,27 @@ import codecs
 import cStringIO
 from dict2xml import dict2xml
 import copy
+import json
+import time
 
+import requests
 from path import path
+from pybamboo.connection import Connection
+from pybamboo.dataset import Dataset
 
 from microsite.utils import download_formhub
+from microsite.formhub import (submit_xml_forms_formhub_raw,
+                           ErrorUploadingDataToFormhub,
+                           ErrorMultipleUploadingDataToFormhub)
+from microsite.utils import nest_flat_dict
+
+SUBMISSION_URL = u'http://formhub.org/atasoils/submission'
+BULK_SUBMISSION_URL = u'http://formhub.org/atasoils/bulk-submission'
+PUBLIC_API_URL = u'https://www.formhub.org/atasoils/forms/%(form)s/public_api'
 
 FH_LOGIN = u'atasoils'
 FH_PASSWORD = u'soilmap'
+BAMBOO_URL = u'http://bamboo.io/'
 
 FORMS = [
     u'EthioSIS_ET',
@@ -39,6 +53,7 @@ NEW_FORMS = [
 
 STEPS_FORMS = u'ESTS_Steps'
 NA_START = u"n/a__"
+NA = None
 
 TOP_QR = 'top_qr'
 SUB_QR = 'sub_qr'
@@ -76,6 +91,115 @@ INDEXES = {
     QR_40_60: -9,
     QR_60_80: -8,
     QR_80_100: -7
+}
+
+AVAILABLES = []
+
+LABS = {
+    u'awassa': [
+        'Hawassa',
+        'Awassa',
+        'Awasa',
+        'Awwasa',
+        'Awassa soil laboratory',
+        'Awass soil laboratory',
+        'Hawasa',
+        'Awasss',
+        'Hawasw',
+        'Hawassa soil testing laboratory',
+        'Hawassa soil testing',
+        'Hawassa soil testing lab.',
+        'Hawassa soil testig lab.',
+        'Hawassa soil testing lab ',
+        'Hawassa soil lab.',
+        'Hawassa ',
+        'Awasa soil lab',
+        'Hawassa soil labratory',
+        'Awasa lab',
+        'Hawassa soil lab',
+        'Hawssa',
+    ],
+    u'nekempte': [
+        'Nekemte',
+        'Nekrmte',
+        ' Nekemte',
+        'Nekemtr',
+        '"Nekemte',
+        'Mekelle',
+        '"Mekelle',
+        'Nrkemte',
+        'Nekemt',
+    ],
+    u'jimma': [
+        'Jimma',
+        'Jima '
+        'Jima',
+        'Jims',
+        'Jimma research',
+        'Jimma soil lab',
+        'Jima research center',
+        'Jima reserch center',
+    ],
+    u'nstc_pc': [
+        'Addis ababa',
+        'Addis Ababa',
+        'NSTC',
+        'Nstl',
+        'NSTL',
+        ' NSTL',
+        'N\tSTL',
+        'National soil testing center',
+        'Addis abeba',
+        '"Addis \na"',
+        'Addis ababa soil lab',
+        'Addis ababa national soil labrator',
+        'Addis ababa national lab',
+        'A.A',
+        'A. A',
+        'Nstc lab',
+        'Add is Ababa',
+        'Addiss Ababa',
+        'nstc',
+    ],
+    u'bar_Hadir': [
+        'Bahardar',
+        'Bahsrdar',
+        'Bahrdar',
+        'Bahrdar soil testing lab.',
+        'Bahir Dar',
+        'Bahirdar ',
+        'Bd ',
+        'Bd',
+        'Bday',
+        'BahrDar',
+        'Bahirdar',
+        'Bahir dar',
+        'Bahrdar s.t.l',
+        'Baher dar',
+    ],
+    u'dessie': [
+        'Dessie',
+        'Dessie ',
+        'Desie',
+        'Dessi',
+        'Desie soil testing laboratory',
+        'Dessiesoiltestinglaboratory',
+        'Desire soil testing laboratory',
+        'Desire soil testing lanoratory',
+        'Dessie soil testing lab.',
+        'Dessie soil t.l',
+        'Dessie soil lab',
+        'Desse',
+        'Dessie soil testing lab',
+        'Desiesoiltestinglaboratpratory',
+    ],
+    u'mekelle': [
+        'Mekelle soil laboratory',
+        'Mekele soil laboratory ',
+        'Mekelle soil labratory',
+        'Mekele',
+        'Mekele\n',
+    ],
 }
 
 
@@ -216,20 +340,16 @@ def json2xform(jsform, form_id):
 
 
 def generate_fh_submission(csv_in, form):
-    from microsite.formhub import (submit_xml_forms_formhub_raw,
-                               ErrorUploadingDataToFormhub,
-                               ErrorMultipleUploadingDataToFormhub)
-    from microsite.utils import nest_flat_dict
 
-    submission_url = u'http://formhub.org/atasoils/submission'
-    bulk_submission_url = u'http://formhub.org/atasoils/bulk-submission'
 
-    xforms = []
     headers = []
+    errors = []
     first = True
     count = 0
+    success = 0
 
     for line in UnicodeReader(open(csv_in)):
+        xforms = []
         if first:
             headers = line
             first = False
@@ -248,16 +368,152 @@ def generate_fh_submission(csv_in, form):
             print(u"%d Adding %s:%s" % (count, key, bc))
             xforms.append(json2xform(submission_dict, NEW_FORMS[0]))
 
-    try:
-        submit_xml_forms_formhub_raw(submission_url=submission_url,
-                                     xforms=xforms, as_bulk=True,
-                                     attachments=None,
-                                     bulk_submission_url=bulk_submission_url)
-    except (ErrorUploadingDataToFormhub,
-            ErrorMultipleUploadingDataToFormhub) as e:
-        print(e)
-        print(e.details())
-    return
+        try:
+            print(u"Submitting %d xforms" % len(xforms))
+            submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
+                                         xforms=xforms, as_bulk=True,
+                                         attachments=None,
+                                         bulk_submission_url=BULK_SUBMISSION_URL)
+            success += 1
+        except (ErrorUploadingDataToFormhub,
+                ErrorMultipleUploadingDataToFormhub) as e:
+            print(e)
+            print(e.details())
+            errors.extend(xforms)
+
+    print(u"Submitted %d forms successfuly." % success)
+    print(u"Re-submitting %d forms." % len(errors))
+    for error in errors:
+        try:
+            submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
+                                         xforms=[error], as_bulk=False,
+                                         attachments=None,
+                                         bulk_submission_url=BULK_SUBMISSION_URL)
+            success += 1
+        except (ErrorUploadingDataToFormhub,
+                ErrorMultipleUploadingDataToFormhub) as e:
+            print(e)
+            print(e.details())
+            errors.extend(xforms)
+
+
+def clean_pc_slug(bad_slug):
+
+    for pc_slug, values in LABS.items():
+        if bad_slug in values:
+            return pc_slug
+    return NA
+
+
+def generate_fh_steps(csv_in, form, step):
+
+    steps = {
+             'imei': NA,
+             'start_time': NA,
+             'end_time': NA,
+             'survey_day': NA,
+             'deviceid': NA,
+             'sim_serial_number': NA,
+             'phone_number': NA,
+             'step': step,
+             'name': NA,
+             'cp_num': NA,
+             'pc_destination': NA,
+             'processing_center': NA,
+             'scan': [],
+             }
+    headers = []
+    first = True
+    count = 0
+    errors = []
+    success = 0
+
+    for line in UnicodeReader(open(csv_in)):
+        xforms = []
+        if first:
+            headers = line
+            first = False
+            continue
+
+        submission = copy.deepcopy(steps)
+
+        parsed_line = dict(zip(headers, line))
+
+        # fill up with common values
+        for key in submission.keys():
+            value = parsed_line.get(key, None)
+            if value is not None:
+                submission[key] = value
+
+        # per form logic
+        for key in ('pc_destination', 'processing_center'):
+            if submission.get(key, NA) != NA:
+                submission[key] = clean_pc_slug(submission[key])
+
+        # cp_num used to be a float
+        if submission.get('cp_num') != NA:
+            try:
+                submission['cp_num'] = int(submission['cp_num'])
+            except:
+                pass
+
+        # form-specific rematch
+        if parsed_line.get('pc_name'):
+            submission['processing_center'] = \
+                                      clean_pc_slug(parsed_line.get('pc_name'))
+
+        # loop on soil_id
+        for key in parsed_line.keys():
+            if not key.startswith('scan['):
+                continue
+
+            soil_id = parsed_line.get(key)
+            if not soil_id in AVAILABLES:
+                continue
+
+            AVAILABLES.remove(soil_id)
+
+            submission['scan'].append({'soil_id': soil_id})
+
+        if not len(submission['scan']):
+            continue
+
+        print(u"%d Adding a form with %d scans" % (count,
+                                                   len(submission['scan'])))
+        xforms.append(json2xform(submission, STEPS_FORMS))
+        # from pprint import pprint as pp ; pp(submission)
+        # from pprint import pprint as pp ; pp(xforms[0])
+        count += 1
+
+        try:
+            print(u"Submitting %d xforms" % len(xforms))
+            submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
+                                         xforms=xforms, as_bulk=False,
+                                         attachments=None,
+                                         bulk_submission_url=BULK_SUBMISSION_URL)
+            success += 1
+        except (ErrorUploadingDataToFormhub,
+                ErrorMultipleUploadingDataToFormhub) as e:
+            print(e)
+            print(e.details())
+            errors.extend(xforms)
+        # if count > 2:
+        #     break
+
+    print(u"Submitted %d forms successfuly." % success)
+    print(u"Re-submitting %d forms." % len(errors))
+    for error in errors:
+        try:
+            submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
+                                         xforms=[error], as_bulk=False,
+                                         attachments=None,
+                                         bulk_submission_url=BULK_SUBMISSION_URL)
+            success += 1
+        except (ErrorUploadingDataToFormhub,
+                ErrorMultipleUploadingDataToFormhub) as e:
+            print(e)
+            print(e.details())
+            errors.extend(xforms)
 
 
 def main():
@@ -276,11 +532,67 @@ def main():
                      csv_out=u'%s_clean.csv' % FORMS[0])
     print(u"Cleanup done.")
     print(u"\n")
-    print(u"Generating FH submissions")
-    generate_fh_submission(csv_in=u'%s_clean.csv' % FORMS[0],
-                           form=NEW_FORMS[0])
-
     # Generate FH submissions for each cleaned sample.
+    submissions_done = path('submissions_done')
+    if not submissions_done.isfile():
+        print(u"Generating FH submissions")
+        generate_fh_submission(csv_in=u'%s_clean.csv' % FORMS[0],
+                               form=NEW_FORMS[0])
+        submissions_done.touch()
+
+    # flat list of available IDs to pop out
+    for id_list in EXISTING.values():
+        for soil_id in id_list:
+            if not soil_id in AVAILABLES:
+                AVAILABLES.append(soil_id)
+
+    # Parse Steps 1-6, cleanup (duplicates), clean PC names
+    for findex, form in enumerate(FORMS):
+        if findex == 0:
+            continue
+        step = u'step%d' % findex
+        step_done = path(u'%s_done' % step)
+        if not step_done.isfile():
+            print(u"Generating STEP %d submissions" % findex)
+            generate_fh_steps(csv_in=u'%s.csv' % form,
+                              form=form,
+                              step=step)
+            # break
+            step_done.touch()
+
+    # join the datasets
+    print(u"Joining datasets")
+    joined_dataset = None
+    bamboo_conn = Connection(BAMBOO_URL)
+    for form in NEW_FORMS:
+        try:
+            form_dataset = json.loads(requests.get(PUBLIC_API_URL
+                                      % {'form': form}).text)['bamboo_dataset']
+        except:
+            form_dataset = u''
+
+        if not form_dataset:
+            continue
+
+        print(u"%s: %s" % (form, form_dataset))
+
+        if not joined_dataset:
+            joined_dataset = form_dataset
+            continue
+
+        print(u"Joined dataset: %s" % joined_dataset)
+
+        ds_joined = Dataset(connection=bamboo_conn, dataset_id=joined_dataset)
+        ds_form = Dataset(connection=bamboo_conn, dataset_id=form_dataset)
+        dataset = Dataset.join(left_dataset=ds_joined,
+                               right_dataset=ds_form,
+                               on=u'barcode',
+                               connection=bamboo_conn)
+        time.sleep(10)
+        joined_dataset = dataset.id
+
+        print(u"Merged dataset: %s" % dataset.id)
+    print(u"Ultimate dataset: %s" % dataset.id)
 
 
 if __name__ == '__main__':
