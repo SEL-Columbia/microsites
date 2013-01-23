@@ -1,0 +1,2 @@
+{% load mstag %}
+<span class="label label-inverse">{{ status|verbose_status }} <span class="badge {{ status|status2badge }}">{{ status }}</span> {% if payload %} {{ payload }}{% endif %}</span>

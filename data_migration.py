@@ -26,6 +26,7 @@ from microsite.utils import nest_flat_dict
 SUBMISSION_URL = u'http://formhub.org/atasoils/submission'
 BULK_SUBMISSION_URL = u'http://formhub.org/atasoils/bulk-submission'
 PUBLIC_API_URL = u'https://www.formhub.org/atasoils/forms/%(form)s/public_api'
+FH_TIMEOUT = 60
 
 FH_LOGIN = u'atasoils'
 FH_PASSWORD = u'soilmap'
@@ -95,6 +96,15 @@ INDEXES = {
 
 AVAILABLES = []
 
+USED = {
+    'step1': [],
+    'step2': [],
+    'step3': [],
+    'step4': [],
+    'step5': [],
+    'step6': [],
+}
+
 LABS = {
     u'awassa': [
         'Hawassa',
@@ -161,7 +171,7 @@ LABS = {
         'Addiss Ababa',
         'nstc',
     ],
-    u'bar_Hadir': [
+    u'bar_hadir': [
         'Bahardar',
         'Bahsrdar',
         'Bahrdar',
@@ -373,7 +383,8 @@ def generate_fh_submission(csv_in, form):
             submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
                                          xforms=xforms, as_bulk=True,
                                          attachments=None,
-                                         bulk_submission_url=BULK_SUBMISSION_URL)
+                                         bulk_submission_url=BULK_SUBMISSION_URL,
+                                         timeout=FH_TIMEOUT)
             success += 1
         except (ErrorUploadingDataToFormhub,
                 ErrorMultipleUploadingDataToFormhub) as e:
@@ -388,7 +399,8 @@ def generate_fh_submission(csv_in, form):
             submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
                                          xforms=[error], as_bulk=False,
                                          attachments=None,
-                                         bulk_submission_url=BULK_SUBMISSION_URL)
+                                         bulk_submission_url=BULK_SUBMISSION_URL,
+                                         timeout=FH_TIMEOUT)
             success += 1
         except (ErrorUploadingDataToFormhub,
                 ErrorMultipleUploadingDataToFormhub) as e:
@@ -427,6 +439,7 @@ def generate_fh_steps(csv_in, form, step):
     count = 0
     errors = []
     success = 0
+    indivs = 0
 
     for line in UnicodeReader(open(csv_in)):
         xforms = []
@@ -471,18 +484,21 @@ def generate_fh_steps(csv_in, form, step):
             if not soil_id in AVAILABLES:
                 continue
 
-            AVAILABLES.remove(soil_id)
+            if soil_id in USED[step]:
+                continue
+
+            USED[step].append(soil_id)
 
             submission['scan'].append({'soil_id': soil_id})
 
         if not len(submission['scan']):
             continue
+        else:
+            indivs += len(submission['scan'])
 
         print(u"%d Adding a form with %d scans" % (count,
                                                    len(submission['scan'])))
         xforms.append(json2xform(submission, STEPS_FORMS))
-        # from pprint import pprint as pp ; pp(submission)
-        # from pprint import pprint as pp ; pp(xforms[0])
         count += 1
 
         try:
@@ -490,24 +506,24 @@ def generate_fh_steps(csv_in, form, step):
             submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
                                          xforms=xforms, as_bulk=False,
                                          attachments=None,
-                                         bulk_submission_url=BULK_SUBMISSION_URL)
+                                         bulk_submission_url=BULK_SUBMISSION_URL,
+                                         timeout=FH_TIMEOUT)
             success += 1
         except (ErrorUploadingDataToFormhub,
                 ErrorMultipleUploadingDataToFormhub) as e:
             print(e)
             print(e.details())
             errors.extend(xforms)
-        # if count > 2:
-        #     break
 
-    print(u"Submitted %d forms successfuly." % success)
+    print(u"Submitted %d forms successfuly (%d indivs)." % (success, indivs))
     print(u"Re-submitting %d forms." % len(errors))
     for error in errors:
         try:
             submit_xml_forms_formhub_raw(submission_url=SUBMISSION_URL,
                                          xforms=[error], as_bulk=False,
                                          attachments=None,
-                                         bulk_submission_url=BULK_SUBMISSION_URL)
+                                         bulk_submission_url=BULK_SUBMISSION_URL,
+                                         timeout=FH_TIMEOUT)
             success += 1
         except (ErrorUploadingDataToFormhub,
                 ErrorMultipleUploadingDataToFormhub) as e:
@@ -557,7 +573,6 @@ def main():
             generate_fh_steps(csv_in=u'%s.csv' % form,
                               form=form,
                               step=step)
-            # break
             step_done.touch()
 
     # join the datasets

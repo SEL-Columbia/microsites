@@ -2,63 +2,16 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-from datetime import datetime
-
 from pybamboo.connection import Connection
 from pybamboo.exceptions import ErrorParsingBambooData
 
-from microsite.bamboo import (get_bamboo_dataset_id,
-                              get_bamboo_url, CachedDataset)
+from microsite.bamboo import (get_bamboo_url, CachedDataset)
 from microsite.utils import get_option
 
 AN_HOUR = 60 * 60
 A_DAY = AN_HOUR * 24
 A_MONTH = A_DAY * 30
 A_YEAR = A_DAY * 365
-
-
-class ESTSPlot(dict):
-
-    def ident(self):
-        return (self.iblock, self.iquadrant, self.icluster, self.iplot)
-
-    @property
-    def iblock(self):
-        try:
-            return int(self['block'])
-        except:
-            return self['block']
-
-    @property
-    def iquadrant(self):
-        try:
-            return int(self['quadrant'])
-        except:
-            return self['quadrant']
-
-    @property
-    def icluster(self):
-        try:
-            return int(self['cluster'])
-        except:
-            return self['cluster']
-
-    @property
-    def iplot(self):
-        try:
-            return int(self['plot'])
-        except:
-            return self['plot']
-
-    @property
-    def gps(self):
-        # use only GPS1 for now
-        gpd = {}
-        for key, value in self.items():
-            if not key.startswith('_gps1'):
-                continue
-            gpd.update({key.replace('_gps1_', ''): value})
-        return gpd
 
 
 class ESTSSample(object):
@@ -100,113 +53,91 @@ class ESTSSample(object):
         self.sample_id = sample_id
         self._position = None
         self._status = None
+        self._status_date = None
         self._events = {}
         self.project = project
 
-        self.retrieve_datasets()
+        self.retrieve_dataset()
 
         self.query_status()
 
     def __str__(self):
         return self.sample_id
 
-    @classmethod
-    def all_datasets(cls, project):
+    def retrieve_dataset(self):
+        connection = Connection(get_bamboo_url(self.project))
+        self.dataset = CachedDataset(get_option(self.project, 'ests_dataset'),
+                                     connection=connection)
+        self.data = self.dataset.get_data(query={u'barcode': self.sample_id},
+                                          cache=True)[0]
 
-        # short-circuit dataset retrieval until bamboo join works
-        def get_option(project, dataset):
-            return {'ests1_dataset': u'1a889141be2d4264b4b4bb77b33d330d',
-                    'ests2_dataset': u'bf56cd8eb1054df287dc0a1350677231',
-                    'ests3_dataset': u'33a6530d513242d9af9683146e69a5a3',
-                    'ests4_dataset': u'd32110b1706945e7ab276f6e7e23b194',
-                    'ests5_dataset': u'x',
-                    'ests6_dataset': u'3021738ddad04a8d9195db5bd119a5c8',
-
-            }.get(dataset)
-
-        def get_bamboo_dataset_id(project):
-            return u'ddc7943d6d284b7dadc1b02de39f33eb'
-
-        connection = Connection(get_bamboo_url(project))
-        return {cls.STATUS_COLLECTED:
-                    CachedDataset(get_bamboo_dataset_id(project),
-                                  connection=connection),
-                cls.STATUS_SENT_TO_PC:
-                    CachedDataset(get_option(project, 'ests1_dataset'),
-                                  connection=connection),
-                 cls.STATUS_ARRIVED_AT_PC:
-                     CachedDataset(get_option(project, 'ests2_dataset'),
-                                   connection=connection),
-                 cls.STATUS_SENT_TO_NSTC:
-                     CachedDataset(get_option(project, 'ests3_dataset'),
-                                   connection=connection),
-                 cls.STATUS_ARRIVED_AT_NSTC:
-                     CachedDataset(get_option(project, 'ests4_dataset'),
-                                   connection=connection),
-                 cls.STATUS_SENT_TO_ARCHIVE:
-                     CachedDataset(get_option(project, 'ests5_dataset'),
-                                   connection=connection),
-                 cls.STATUS_ARRIVED_AT_ARCHIVE:
-                     CachedDataset(get_option(project, 'ests6_dataset'),
-                                   connection=connection)}
-
-    def retrieve_datasets(self):
-        self.datasets = self.all_datasets(self.project)
+        self.siblings = {}
+        for position in self.POSITIONS:
+            if position == self.position:
+                self.siblings[position] = self.sample_id
+                continue
+            try:
+                data = self.dataset.get_data(query={u'position': position,
+                                                u'block': self.data['block'],
+                                                u'quadrant': self.data['quadrant'],
+                                                u'cluster': self.data['cluster'],
+                                                u'plot': self.data['plot'],
+                                                },
+                                         select=['barcode'],
+                                         cache=True)[-1]
+                if isinstance(data, dict):
+                    data = data.get(u'barcode', u'')
+            except:
+                # raise
+                data = None
+            self.siblings[position] = data
 
     def query_status(self):
 
-        # find out plot to make sure we have a valid sample_id
-        for position in self.POSITIONS.keys():
-            matching_plots = self.datasets[self.STATUS_COLLECTED] \
-                                 .get_data(query={u'found_%s' % position:
-                                                    self.sample_id},
-                                           order_by='-end',
-                                           limit=1,
-                                           cache=True,
-                                           cache_expiry=A_MONTH)
-            if isinstance(matching_plots, list) and len(matching_plots):
-                self._position = position
-                self._plot = ESTSPlot(matching_plots[0])
-                break
-        if not self.position:
-            raise ValueError(u"Invalid Sample ID: no matching plot.")
-
-        # find out status of the sample
-        for status in sorted(self.STATUSES.keys(), reverse=True)[:-1]:
+        for astatus in self.STATUSES.keys():
+            end = self.data.get('step%d_end_time' % astatus)
+            name = self.data.get('step%d_name' % astatus)
             try:
-                matching_events = self.datasets[status] \
-                                      .get_data(query={'scan_soil_id':
-                                                            self.sample_id},
-                                                order_by="-end_time",
-                                                limit=1,
-                                                cache=True,
-                                                cache_expiry=A_DAY)
-            except ErrorParsingBambooData:
-                continue
-            if isinstance(matching_events, list) and len(matching_events):
-                self._events[status] = matching_events[0]
-                self._events[status].update({'status': status})
-                if isinstance(self._events[status]['end_time'], (int, basestring)):
-                    # temp fix for fixture
-                    try:
-                        self._events[status].update({'end_time': datetime.fromtimestamp(int(self._events[status]['end_time']))})
-                    except:
-                        pass
-                if not self.status:
-                    self._status = status
-            else:
-                self._events[status] = None
+                if astatus > 1:
+                    prev_end = self.data.get('step%d_end_time' % (astatus - 1))
+                else:
+                    prev_end = self.data.get('end')
+                delay = (end - prev_end)
+            except:
+                delay = None
+            processing_center = self.data.get('step%d_processing_center' % astatus)
+            pc_destination = self.data.get('step%s_pc_destination' % astatus)
+            pc_name = processing_center if processing_center else pc_destination
+
+            if end is not None and end != u'null':
+
+                # create Event
+                self._events[astatus] = {'date': end,
+                                         'delay': delay,
+                                         'survey_day': end,
+                                         'pc_name': pc_name,
+                                         'name': name,
+                                         'status': astatus}
+                # Update Status
+                self._status = astatus
+                self._status_date = end
+
         # mark as collected if none found
         if not self.status:
             self._status = self.STATUS_COLLECTED
+            self._status_date = self.data.get('end')
 
     @property
     def is_valid(self):
-        return self._status is not None and self.plot is not None
+        return self._status is not None
 
     @property
     def status(self):
         return self._status
+
+    @property
+    def status_date(self):
+        return self._status_date
 
     @property
     def verbose_status(self):
@@ -218,28 +149,86 @@ class ESTSSample(object):
 
     @property
     def position(self):
-        return self._position
+        return self.data.get(u'position', u"n/a")
 
     @property
     def depth(self):
-        return self.POSITIONS.get(self.position, u"n/a")
+        return self.position
 
     def events(self):
         return self._events
 
-    def data(self):
-        if self.status is None:
-            return {}
-        if self.status == self.STATUS_COLLECTED:
-            return self.plot()
-        return self.events()[self.status]
+    def ident(self):
+        return u'%s.%s.%s.%s' % self.plot_ident_data() + '.' + self.depth
 
-    @property
-    def plot(self):
-        return self._plot
+    def plot_ident_data(self):
+        return (self.iblock, self.iquadrant, self.icluster, self.iplot)
 
     def plot_ident(self):
-        return self.plot.ident()
+        return u".".join([str(e) for e in self.plot_ident_data()])
 
-    def ident(self):
-        return u'%s.%s.%s.%s' % self.plot_ident() + '.' + self.depth
+    @property
+    def iblock(self):
+        block = self.data.get(u'block', u'')
+        try:
+            return int(block)
+        except:
+            return block
+
+    @property
+    def iquadrant(self):
+        quadrant = self.data.get(u'quadrant', u'')
+        try:
+            return int(quadrant)
+        except:
+            return quadrant
+
+    @property
+    def icluster(self):
+        cluster = self.data.get(u'cluster', u'')
+        try:
+            return int(cluster)
+        except:
+            return cluster
+
+    @property
+    def iplot(self):
+        plot = self.data.get(u'plot', u'')
+        try:
+            return int(plot)
+        except:
+            return plot
+
+    @property
+    def gps(self):
+        # use only GPS1 for now
+        gpd = {}
+        for key, value in self.data.items():
+            if not key.startswith('_gps1'):
+                continue
+            gpd.update({key.replace('_gps1_', ''): value})
+        return gpd
+
+    @property
+    def sibling_top_qr(self):
+        return self.siblings.get('top_qr')
+
+    @property
+    def sibling_sub_qr(self):
+        return self.siblings.get('sub_qr')
+
+    @property
+    def sibling_qr_20_40(self):
+        return self.siblings.get('qr_20_40')
+
+    @property
+    def sibling_qr_40_60(self):
+        return self.siblings.get('qr_40_60')
+
+    @property
+    def sibling_qr_60_80(self):
+        return self.siblings.get('qr_60_80')
+
+    @property
+    def sibling_qr_80_100(self):
+        return self.siblings.get('qr_80_100')

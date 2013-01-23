@@ -1,1 +1,1 @@
-Ethiopian Soil Tracking System
+<span style="color:green;">Ethiopian </span><span style="color:gold;">Soil Track</span><span style="color:red;">ing System</span>

@@ -4,6 +4,7 @@ import re
 import json
 import copy
 import uuid
+import time
 from datetime import datetime, timedelta
 
 from django.shortcuts import render
@@ -26,8 +27,7 @@ from microsite.decorators import project_required
 from microsite.formhub import (submit_xml_forms_formhub,
                                ErrorUploadingDataToFormhub,
                                ErrorMultipleUploadingDataToFormhub)
-from microsite.bamboo import (get_bamboo_dataset_id,
-                              get_bamboo_url, CachedDataset)
+from microsite.bamboo import (get_bamboo_url, CachedDataset)
 
 from soiltrack.spid_ssid import generate_ssids
 from soiltrack.utils import ensure_fixtures_ready
@@ -36,20 +36,37 @@ from soiltrack.sample import ESTSSample
 
 DEFAULT_PROJECT = Project.objects.get(slug='soiltrack')
 
-PROCESSING_CENTERS = {
-    'awassa': (u"Awassa", u"Hawassa soil testing",
-               u"Hawassa soil testing laboratory",
-               u"Hawassa soil lab", u"Hawassa soil testing lab."),
-    'nekempte': (u"Nekempte", u"Nekemte"),
-    'jimma': (u"Jimma", u"Jima"),
-    'nstc_pc': (u"NSTC PC", u"nstc"),
-    'bar_hadir': (u"Bar Hadir", u"Bd"),
-    'dessie': (u"Dessie",),
-    'mekelle': (u"Mekelle", u"Mekele"),
-}
-
 # check-for/create datasets fixtures
 ensure_fixtures_ready(DEFAULT_PROJECT)
+
+
+def get_ests_dataset(project):
+    connection = Connection(get_bamboo_url(project))
+    return CachedDataset(get_option(project, 'ests_dataset'),
+                                    connection=connection)
+
+
+def get_processing_centers(dataset):
+    return [center for center in
+            dataset.get_data(select=['step1_pc_destination'],
+                             distinct='step1_pc_destination',
+                             cache=True)
+            if isinstance(center, basestring)]
+
+
+def get_missing_trigger(request=None):
+    default = 30
+    if not request:
+        return default
+
+    try:
+        return int(request.COOKIES.get('ests_missing_trigger', default))
+    except:
+        return default
+
+
+def set_missing_trigger(response, value):
+    response.set_cookie('ests_missing_trigger', value)
 
 
 @project_required(guests=DEFAULT_PROJECT)
@@ -57,8 +74,7 @@ def dashboard(request):
     context = {'category': 'home'}
 
     # init bamboo datasets
-    main_dataset = ESTSSample.all_datasets(request.user.project) \
-                             .get(ESTSSample.STATUS_COLLECTED)
+    dataset = get_ests_dataset(request.user.project)
 
     def pc(num, denum):
         try:
@@ -68,89 +84,98 @@ def dashboard(request):
 
     # total number of plots (EthioSIS_ET submissions)
     try:
-        nb_plots = int(main_dataset.count('found_top_qr', cache=True))
+        nb_plots = len(dataset.get_data(select=['plot'],
+                                        distinct='plot',
+                                        cache=True))
     except (BambooError, ErrorParsingBambooData):
         nb_plots = 0
 
+    def count_submission_in_step(step):
+        try:
+            query = {"step%d_survey_day" % step: {"$gt": 0}}
+            return len(dataset.get_data(query=query,
+                                        select=['barcode'],
+                                        cache=True))
+        except (BambooError, ErrorParsingBambooData):
+            return 0
+
+    # missing trigger from cookie
+    ests_missing_trigger = get_missing_trigger(request)
+    new_missing_trigger = request.GET.get('trigger', None)
+    if new_missing_trigger:
+        try:
+            ests_missing_trigger = int(new_missing_trigger)
+        except:
+            new_missing_trigger = False
+
     # collected samples (ESTS1)
-    try:
-        ests1 = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_SENT_TO_PC)
-        nb_collected = int(ests1.get_info(cache=True).get('num_rows', 0))
-    except (BambooError, ErrorParsingBambooData):
-        nb_collected = 0
+    nb_collected = count_submission_in_step(1)
 
     # being processed samples (ESTS2)
-    try:
-        ests2 = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_ARRIVED_AT_PC)
-        nb_processing = int(ests2.get_info(cache=True).get('num_rows', 0))
-    except (BambooError, ErrorParsingBambooData):
-        nb_processing = 0
+    nb_processing = count_submission_in_step(2)
 
     # processed samples (ESTS3)
-    try:
-        ests3 = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_SENT_TO_NSTC)
-        nb_processed = int(ests3.get_info(cache=True).get('num_rows', 0))
-    except (BambooError, ErrorParsingBambooData):
-        nb_processed = 0
+    nb_processed = count_submission_in_step(3)
 
     # being analyzed samples (ESTS4)
-    try:
-        ests4 = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_ARRIVED_AT_NSTC)
-        nb_analyzing = int(ests4.get_info(cache=True).get('num_rows', 0))
-    except (BambooError, ErrorParsingBambooData):
-        nb_analyzing = 0
+    nb_analyzing = count_submission_in_step(4)
 
     # analyzed samples (ESTS5)
-    try:
-        ests5 = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_SENT_TO_ARCHIVE)
-        nb_analyzed = int(ests5.get_info(cache=True).get('num_rows', 0))
-    except (BambooError, ErrorParsingBambooData):
-        nb_analyzed = 0
+    nb_analyzed = count_submission_in_step(5)
 
     # archived samples (ESTS6)
-    try:
-        ests6 = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_ARRIVED_AT_ARCHIVE)
-        nb_archived = int(ests6.get_info(cache=True).get('num_rows', 0))
-    except (BambooError, ErrorParsingBambooData):
-        nb_archived = 0
-
-    # lost/missing samples
-    nb_lost = 1
+    nb_archived = count_submission_in_step(6)
 
     # total form submissions:
     nb_submissions = sum([nb_plots, nb_collected, nb_processing, nb_processed,
                           nb_analyzing, nb_analyzed, nb_archived])
 
+    processing_centers = get_processing_centers(dataset)
+
+    # last events
     last_events = []
     last_events_id = []
-    for ds_type, dataset in {'ests1': ests1,
-                    'ests2': ests2,
-                    'ests3': ests3,
-                    'ests4': ests4,
-                    'ests5': ests5,
-                    'ests6': ests6}.items():
+    for field in ('end', 'step1_end_time', 'step2_end_time',
+                    'step3_end_time', 'step4_end_time', 'step5_end_time',
+                    'step6_end_time'):
 
-        last_ten = dataset.get_data(order_by='-end_time', limit=10,
-                                    select=['scan_soil_id', 'end_time'],
+        last_ten = dataset.get_data(order_by='-%s' % field, limit=10,
+                                    select=['barcode', field],
                                     cache=True, cache_expiry=60 * 60 * 5)
         if isinstance(last_ten, list):
             last_events_id += last_ten
 
     last_events_id.sort(key=lambda e: e.get('end_time'), reverse=True)
     last_events_id = last_events_id[:9]
+
     for event in last_events_id:
         try:
-            sample = ESTSSample(event.get(u'scan_soil_id'),
+            sample = ESTSSample(event.get(u'barcode'),
                                 project=request.user.project)
             last_events.append(sample)
         except ValueError:
             pass
+
+    # missing samples by PC
+    # TODO: use bamboo calculation when it'll be working.
+    # add_calclation(name='proc_delay', formula='step3_end_time - step2_end_time')
+    missings = {pc: 0 for pc in processing_centers}
+    trigger_day_ago = time.mktime((datetime.now()
+                                  - timedelta(ests_missing_trigger)).timetuple())
+    for center in missings.keys():
+        print(center)
+        try:
+            query = {"step2_end_time": {"$lte": trigger_day_ago},
+                     "step2_processing_center": center}
+            nb_missing = len(dataset.get_data(query=query,
+                                              select=['barcode'],
+                                              cache=True))
+        except (BambooError, ErrorParsingBambooData):
+            nb_missing = 0
+        missings[center] = nb_missing
+
+    # lost/missing samples
+    nb_lost = sum(missings.values())
 
     context.update({'nb_plots': nb_plots,
                     'nb_collected': nb_collected,
@@ -166,11 +191,14 @@ def dashboard(request):
                     'nb_archived': nb_archived,
                     'nb_submissions': nb_submissions,
                     'last_events': last_events,
-                    'processing_centers': [(k, v[0])
-                                           for k, v
-                                           in PROCESSING_CENTERS.items()]})
+                    'processing_centers': processing_centers,
+                    'ests_missing_trigger': ests_missing_trigger,
+                    'missings': missings})
 
-    return render(request, 'dashboard.html', context)
+    response = render(request, 'dashboard.html', context)
+    if new_missing_trigger:
+        set_missing_trigger(response, new_missing_trigger)
+    return response
 
 
 def idgen(request, nb_ids=DEFAULT_IDS):
@@ -219,73 +247,105 @@ def options(request):
 def processing_center(request, pc_slug):
     context = {'category': 'pc'}
 
-    pc_slug = pc_slug.lower()
-    if not pc_slug in PROCESSING_CENTERS.keys():
+    dataset = get_ests_dataset(request.user.project)
+    processing_centers = get_processing_centers(dataset)
+
+    if not pc_slug in processing_centers:
         raise Http404(u"Unable to find matching Processing Center")
 
-    arrived_pc = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_ARRIVED_AT_PC)
-    left_pc = ESTSSample.all_datasets(request.user.project) \
-                          .get(ESTSSample.STATUS_SENT_TO_NSTC)
-
-    namesq = [{"pc_name": name} for name in PROCESSING_CENTERS.get(pc_slug)]
-    seven_day_ago = datetime.now() - timedelta(7)
+    seven_day_ago = datetime.now() - timedelta(400)
+    seven_day_ago = time.mktime((datetime.now() - timedelta(7)).timetuple())
 
     try:
-        received_data = arrived_pc.get_data(select=['scan_soil_id'],
-                                            query={'$or': namesq},
-                                            cache=True, cache_expiry=3600)
-    except:
-        received_data = []
-
-    nb_received = len(received_data)
+        query = {"step2_end_time": {"$gt": 0},
+                 "step2_processing_center": pc_slug}
+        nb_received = len(dataset.get_data(query=query,
+                                           select=['barcode'],
+                                           cache=True))
+    except (BambooError, ErrorParsingBambooData):
+        nb_received = 0
 
     try:
-        nb_received_7days = len(arrived_pc.get_data(select=['pc_name'],
-                                                    query={"$or": namesq,
-                                                           "survey_day":
-                                                            {"$gte": seven_day_ago.isoformat()}}),
-                                                    cache=True, cache_expiry=3600)
-    except:
+        query = {"step2_end_time": {"$gte": seven_day_ago},
+                 "step2_processing_center": pc_slug}
+        nb_received_7days = len(dataset.get_data(query=query,
+                                                 select=['barcode'],
+                                                 cache=True))
+    except (BambooError, ErrorParsingBambooData):
         nb_received_7days = 0
 
     try:
-        processed_data = left_pc.get_data(select=['pc_name'],
-                                          query={'$or': namesq},
-                                          cache=True, cache_expiry=3600)
-    except:
-        processed_data = []
-    nb_processed = len(processed_data)
+        query = {"step3_end_time": {"$gt": 0},
+                 "step2_processing_center": pc_slug}
+        nb_processed = len(dataset.get_data(query=query,
+                                           select=['barcode'],
+                                           cache=True))
+    except (BambooError, ErrorParsingBambooData):
+        nb_processed = 0
 
     try:
-        nb_processed_7days = len(left_pc.get_data(select=['pc_name'],
-                                                  query={"$or": namesq,
-                                                         "survey_day":
-                                                            {'$gte': seven_day_ago.isoformat()}}),
-                                                  cache=True, cache_expiry=3600)
-    except:
+        query = {"step3_end_time": {"$gte": seven_day_ago},
+                 "step2_processing_center": pc_slug}
+        nb_processed_7days = len(dataset.get_data(query=query,
+                                                 select=['barcode'],
+                                                 cache=True))
+    except (BambooError, ErrorParsingBambooData):
         nb_processed_7days = 0
 
-    avg_processing = 'n/a'
+    # TODO: retry with pybamboo.
+    # at this time, I can't make mean(step3_surey_day - step2_survey_day)
+    # to work as expected
+    def duration_step(data):
+        try:
+            return (data['step3_end_time'] - data['step2_end_time']).days
+        except TypeError:
+            return None
+    durations = [duration_step(data)
+                 for data in
+                 dataset.get_data(query={"step2_processing_center": pc_slug},
+                                  select=['step3_end_time',
+                                         'step2_end_time', ],
+                                  cache=True)
+                 if duration_step(data) is not None]
 
-    remaining_samples = list(set([e.get('scan_soil_id', None)
-                                  for e in received_data]))
+    try:
+        avg_processing = reduce(lambda x, y: x + y, durations) / len(durations)
+    except TypeError:
+        avg_processing = u"n/a"
 
-    for sid in (e.get('scan_soil_id', None) for e in processed_data):
-        while True:
-            try:
-                remaining_samples.remove(sid)
-            except ValueError:
-                break
+    query = {"$or": [{"step2_processing_center": pc_slug},
+                     {"step1_pc_destination": pc_slug}]}
+    sites = [d['block'] for d in
+             dataset.get_data(query=query, select=['block'])]
+    sites = [int(b) for b in list(set(sites))]
+    try:
+        sites.remove(0)
+    except:
+        pass
+
+    dest_and_arrived = dataset.get_data(query={"$or": [{"step1_pc_destination": pc_slug},
+                                                      {"step2_processing_center": pc_slug}]},
+                                         select=['barcode',
+                                                 'step1_pc_destination',
+                                                 'step2_processing_center',
+                                                 'step1_survey_day'],
+                                         cache=True)
+    remaining_samples = []
+    for sample in dest_and_arrived:
+        if (sample['step1_pc_destination'] != sample['step2_processing_center']
+            and sample['step1_pc_destination'] != "null"):
+            if not sample['barcode'] in remaining_samples:
+                remaining_samples.append(sample['barcode'])
 
     context.update({'pc': pc_slug,
-                    'pc_name': PROCESSING_CENTERS[pc_slug][0],
                     'nb_received': nb_received,
                     'nb_received_7days': nb_received_7days,
                     'nb_processed': nb_processed,
                     'nb_processed_7days': nb_processed_7days,
                     'avg_processing': avg_processing,
-                    'remaining_samples': remaining_samples})
+                    'remaining_samples': remaining_samples,
+                    'sites': sites,
+                    })
 
     return render(request, 'pc.html', context)
 
@@ -296,6 +356,30 @@ def sample_detail(request):
     context = {'category': 'sample'}
 
     sample_id = request.GET.get('sid', None)
+    plot_id = request.GET.get('plot_id', None)
+
+    # Search by Plot request
+    if plot_id and not sample_id:
+        dataset = get_ests_dataset(request.user.project)
+        try:
+            block, quadrant, cluster, plot = plot_id.split('.')
+            block = float(block)
+            quadrant = float(quadrant)
+            cluster = float(cluster)
+            plot = float(plot)
+        except:
+            raise Http404(u"Incorect Plot ID.")
+
+        results = dataset.get_data(query={'block': block,
+                                          'quadrant': quadrant,
+                                          'cluster': cluster,
+                                          'plot': plot},
+                                   select=['barcode', 'position'])
+
+        try:
+            sample_id = results[0].get('barcode')
+        except:
+            raise Http404(u"Unable to find samples matching this Plot.")
 
     if not sample_id:
         raise Http404(u"Incorect Sample ID.")
@@ -391,7 +475,7 @@ def steps_form_splitter(request, project_slug='soiltrack'):
     xforms = [json2xform(form) for form in forms]
 
     try:
-        submit_xml_forms_formhub(project, xforms, as_bulk=False)
+        submit_xml_forms_formhub(project, xforms, as_bulk=True)
     except (ErrorUploadingDataToFormhub,
             ErrorMultipleUploadingDataToFormhub) as e:
         return HttpResponse(u"%(intro)s\n%(detail)s"
@@ -439,9 +523,16 @@ def main_form_splitter(request, project_slug='soiltrack'):
     found = bool(len(jsform.get(u'found', {})) > 1)
 
     for key in positions.keys():
-        positions[key] = jsform.get(u'found', {}).get('%s' % key, '')
+        positions[key] = jsform.get(u'found', {}).get(key, '')
         if not re.match(r'[a-zA-Z0-9\_\-]+', positions[key]):
             positions[key] = None
+
+    # delete all position keys
+    for key in positions.keys():
+        try:
+            jsform[u'found'].pop(key)
+        except KeyError:
+            pass
 
     for position in positions.keys():
         if not positions[position]:
@@ -452,13 +543,6 @@ def main_form_splitter(request, project_slug='soiltrack'):
 
         # duplicate whole form to grab meta data.
         form = copy.deepcopy(jsform)
-
-        # delete all position keys
-        for key in positions.keys():
-            try:
-                form[u'found'].pop(key)
-            except KeyError:
-                pass
 
         # add `barcode` field
         form[u'barcode'] = barcode
@@ -499,7 +583,7 @@ def main_form_splitter(request, project_slug='soiltrack'):
     xforms = [json2xform(form) for form in forms]
 
     try:
-        submit_xml_forms_formhub(project, xforms, as_bulk=False)
+        submit_xml_forms_formhub(project, xforms, as_bulk=True)
     except (ErrorUploadingDataToFormhub,
             ErrorMultipleUploadingDataToFormhub) as e:
         return HttpResponse(u"%(intro)s\n%(detail)s"

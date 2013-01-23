@@ -19,6 +19,7 @@
 <div class="span7">
 
 <h2>Remaining Samples</h2>
+<p>Samples destinated to this P.C which never arrived</p>
 <ul>
     {% for sample in remaining_samples %}
     <li><a href="{% url sample_detail %}?sid={{ sample }}">{{ sample }}</a></li>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load mstag %}
 
-{% block page_title %}{{ sample_id|title }} PC – ESTS{% endblock %}
+{% block page_title %}{{ sample.plot_ident }} / {{ sample_id }}{% endblock %}
 
 {% block content %}
 
@@ -12,49 +12,50 @@
 <tr><th>ID</th><td>{{ sample.ident }}</td></tr>
 <tr><th>Depth</th><td>{{ sample.depth }}</td></tr>
 <tr><th>Confluence Point</th><td>{{ sample.data.cp_num }}</td></tr>
+<tr><th>Status</th><td>{% include "status.html" with status=sample.status payload=sample.status_date %}</td></tr>
 </table>
 <h2>History</h2>
 <table class="table table-striped">
-<tr><th>Event</th><th>Author</th><th>Date</th><th>Delay</th><th>Note</th></tr>
+<tr><th>Event</th><th>Author</th><th>Date</th><th>Delay</th><th>P.C</th></tr>
 <tr>
-    <td><span class="label label-inverse">{{ 0|verbose_status }} <span class="badge {{ 0|status2badge }}">{{ 0 }}</span></span></td>
-    <td>{{ sample.plot.pc_name }}</td>
-    <td>{{ sample.plot.end }}</td>
+    <td>{% include "status.html" with status=0 %}</td>
+    <td>{{ sample.data.name }}</td>
+    <td>{{ sample.data.end }}</td>
     <td>n/a</td>
-    <td></td></tr>
+    <td>n/a</td>
 {% for status, event in sample.events.items %}
 {% if event %}
 <tr>
-    <td><span class="label label-inverse">{{ status|verbose_status }} <span class="badge {{ status|status2badge }}">{{ status }}</span></span></td>
-    <td>{{ event.pc_name }}</td>
+    <td>{% include "status.html" with status=event.status %}</td>
+    <td>{{ event.name }}</td>
     <td>{{ event.survey_day }}</td>
-    <td>{{ event|step_delay:sample|default_if_none:"n/a" }}</td>
-    <td>{{ event.note }}</td></tr>
+    <td>{{ event.delay|default_if_none:"n/a" }}</td>
+    <td>{{ event.pc_name|KeyName:"soiltrack|options"|default:"n/a" }}</td>
 {% endif %}
 {% endfor %}
 </table>
 
-<h2>Plot {{ sample.plot.iquadrant }}.{{ sample.plot.icluster }}.{{ sample.plot.iplot }}</h2>
+<h2>Plot {{ sample.plot_ident }}</h2>
 <table class="table table-striped">
-<th>GPS Coordinates</th><td><a href="http://maps.google.com/?q={{ sample.plot.gps.latitude }},{{ sample.plot.gps.longitude }}">Google Maps</a></br />
-Latitude: {{ sample.plot.gps.latitude }}<br />
-Longitude: {{ sample.plot.gps.longitude }}<br />
-Altitude: {{ sample.plot.gps.altitude }}<br />
-Precision: {{ sample.plot.gps.precision }}
+<th>GPS Coordinates</th><td><a href="http://maps.google.com/?q={{ sample.gps.latitude }},{{ sample.gps.longitude }}">Google Maps</a></br />
+Latitude: {{ sample.gps.latitude }}<br />
+Longitude: {{ sample.gps.longitude }}<br />
+Altitude: {{ sample.gps.altitude }}<br />
+Precision: {{ sample.gps.precision }}
 </td></tr>
-<th>Top</th><td><a href="{% url sample_detail %}?sid={{ sample.plot.found_top_qr }}">{{ sample.plot.found_top_qr }}</a></td></tr>
-<th>0-20</th><td><a href="{% url sample_detail %}?sid={{ sample.plot.found_sub_qr }}">{{ sample.plot.found_sub_qr }}</a></td></tr>
-<th>20-40</th><td><a href="{% url sample_detail %}?sid={{ sample.plot.found_qr_20_40 }}">{{ sample.plot.found_qr_20_40 }}</a></td></tr>
-<th>40-60</th><td><a href="{% url sample_detail %}?sid={{ sample.plot.found_qr_40_60 }}">{{ sample.plot.found_qr_40_60 }}</a></td></tr>
-<th>60-80</th><td><a href="{% url sample_detail %}?sid={{ sample.plot.found_qr_60_80 }}">{{ sample.plot.found_qr_60_80 }}</a></td></tr>
-<th>80-100</th><td><a href="{% url sample_detail %}?sid={{ sample.plot.found_qr_80_100 }}">{{ sample.plot.found_qr_80_100 }}</a></td></tr>
-<th>Collecter</th><td>{{ sample.plot.name }}</td></tr>
+<th>Top</th><td><a href="{% url sample_detail %}?sid={{ sample.sibling_top_qr }}">{{ sample.sibling_top_qr }}</a></td></tr>
+<th>0-20</th><td><a href="{% url sample_detail %}?sid={{ sample.sibling_sub_qr }}">{{ sample.sibling_sub_qr }}</a></td></tr>
+<th>20-40</th><td><a href="{% url sample_detail %}?sid={{ sample.sibling_qr_20_40 }}">{{ sample.sibling_qr_20_40 }}</a></td></tr>
+<th>40-60</th><td><a href="{% url sample_detail %}?sid={{ sample.sibling_qr_40_60 }}">{{ sample.sibling_qr_40_60 }}</a></td></tr>
+<th>60-80</th><td><a href="{% url sample_detail %}?sid={{ sample.sibling_qr_60_80 }}">{{ sample.sibling_qr_60_80 }}</a></td></tr>
+<th>80-100</th><td><a href="{% url sample_detail %}?sid={{ sample.sibling_qr_80_100 }}">{{ sample.sibling_qr_80_100 }}</a></td></tr>
+<th>Collecter</th><td>{{ sample.data.name }}</td></tr>
 </table>
 
 <h2>Raw Plot Data</h2>
 
 <table class="table table-striped">
-{% for key, value in sample.plot.items %}
+{% for key, value in sample.data.items %}
 <tr><th>{{ key }}</th><td>{{ value }}</tr>
 {% endfor %}
 </table>

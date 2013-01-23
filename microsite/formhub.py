@@ -172,7 +172,8 @@ def get_formhub_bulk_submission_url(project, is_registration=False):
     return u'%(user_url)s/bulk-submission' % data
 
 
-def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
+def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[],
+                             timeout=FORMHUB_UPLOAD_TIMEOUT):
     formhub_submission_url = get_formhub_submission_url(project)
     bulk_submission_url = get_formhub_bulk_submission_url(project)
     return submit_xml_forms_formhub_raw(formhub_submission_url, xforms=xforms,
@@ -182,7 +183,8 @@ def submit_xml_forms_formhub(project, xforms=[], as_bulk=False, attachments=[]):
 
 
 def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
-                                 attachments=[], bulk_submission_url=u''):
+                                 attachments=[], bulk_submission_url=u'',
+                                 timeout=FORMHUB_UPLOAD_TIMEOUT):
 
     # allow single form parameter
     if not isinstance(xforms, list):
@@ -217,10 +219,10 @@ def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
                                     files={'zip_submission_file':
                                            (zip_file,
                                             open(zip_file))},
-                                           timeout=FORMHUB_UPLOAD_TIMEOUT)
+                                           timeout=timeout)
         except requests.exceptions.Timeout:
             raise ErrorUploadingDataToFormhub(u"Upload timed out after "
-                                              u"%ds." % FORMHUB_UPLOAD_TIMEOUT)
+                                              u"%ds." % timeout)
         except Exception as e:
             raise ErrorUploadingDataToFormhub(u"Unable to send: %r" % e.message)
         finally:
@@ -250,7 +252,7 @@ def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
                 req_files.update({'form_attachment_%d' % num: attachment})
             req = requests.post(submission_url,
                                 files=req_files,
-                                timeout=FORMHUB_UPLOAD_TIMEOUT)
+                                timeout=timeout)
         except requests.exceptions.Timeout as e:
             exception.timeouts.append(e)
             continue

@@ -20,22 +20,29 @@
     <table class="table table-striped hometable">
         <tr><th>Samples Collected<br />
         <div class="progress progress-striped progress-info "><div class="bar" style="width: {{ pc_collected|percent_raw }}%;"></div></div>
-        </th><td class="samplenb">{{ nb_collected|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Collected Samples</a></td> --></tr>
+        </th><td class="samplenb">{{ nb_collected|numberformat }}</td></tr>
         <tr><th>Samples Processed<br />
         <div class="progress progress-striped progress-success"><div class="bar" style="width: {{ pc_processed|percent_raw }}%;">{{ pc_processed|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_processed|numberformat }}/<em>{{ nb_processing }}</em></td><!-- <td class="btn-group"><a href="" class="btn  btn-small">Browse Processed Samples</a><a href="" class="btn btn-small">Browse in-processing Samples</a></td> --></tr>
-        <tr><th>Samples Analyzed<br />
+        </th><td class="samplenb">{{ nb_processed|numberformat }}/<em>{{ nb_processing }}</em></td></tr>
+        <tr><th>Samples Sent To archive.<br />
         <div class="progress progress-striped progress-warning"><div class="bar" style="width: {{ pc_analyzed|percent_raw }}%;">{{ pc_analyzed|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_analyzed|numberformat }}/<em>{{ nb_analyzing }}</em></td><!-- <td class="btn-group"><a href="" class="btn  btn-small">Browse Analyzed Samples</a><a href="" class="btn btn-small">Browse being-analyzed Samples</a></td> --></tr>
+        </th><td class="samplenb">{{ nb_analyzed|numberformat }}/<em>{{ nb_analyzing }}</em></td></tr>
         <tr><th>Lost or Missing Samples<br />
         <div class="progress progress-striped progress-danger"><div class="bar" style="width: {{ pc_lost|percent_raw }}%;">{{ pc_lost|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_lost|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Missing Samples</a></td> --></tr>
+        </th><td class="samplenb">{{ nb_lost|numberformat }}</td></tr>
     </table>
 
     <h2>Find a Sample</h2>
-    <form class="form-search" method="get" action="{% url sample_detail %}">
-    <input type="text" class="input-medium search-query" placeholder="Sample SSID" name="sid">
+    <form class="form-search form-inline" method="get" action="{% url sample_detail %}">
+    <input type="text" class="input-medium search-query" placeholder="Sample SSID" name="sid"> or
+    <input type="text" class="input-medium search-query" placeholder="Plot Number" name="plot_id">
     <button type="submit" class="btn" id="find-btn">Find</button>
+    </form>
+
+    <h2>Change Missing Trigger</h2>
+    <form class="form-search form-inline" method="get" action="{% url home %}">
+    <input type="text" class="input-medium search-query" placeholder="Number of days" value="{{ ests_missing_trigger }}" name="trigger">
+    <button type="submit" class="btn" id="find-btn">Set New Value</button>
     </form>
 
 </div>
@@ -45,7 +52,7 @@
         <ul class="nav nav-list">
         <li class="nav-header">Latest events</li>
         {% for event in last_events %}
-        <li><a href="{% url sample_detail %}?sid={{ event.sample_id }}"><strong>{{ event.ident }}</strong> <span class="label label-inverse">{{ event.verbose_status }} <span class="badge {{ event.status|status2badge }}">{{ event.status }}</span></span> on {{ event.data.survey_day }}</a></li>
+        <li><a href="{% url sample_detail %}?sid={{ event.sample_id }}"><strong>{{ event.ident }}</strong> {% include "status.html" with status=event.status payload=event.status_date %}</a></li>
         {% endfor %}
         <li class="nav-header">NB OF SUBMISSIONS: {{ nb_submissions|NAdefault|numberformat }}</li>
         <li class="nav-header">NB OF PLOTS: {{ nb_plots|NAdefault|numberformat }}</li>
@@ -57,8 +64,8 @@
     <div class="well sidebar-nav">
         <ul class="nav nav-list">
         <li class="nav-header">Processing Centers</li>
-        {% for pc in processing_centers %}
-        <li><a href="{% url pc pc_slug=pc.0 %}"><strong>{{ event.ident }}</strong>{{ pc.1|title }}</a></li>
+        {% for pc, missing in missings.items %}
+        <li><a href="{% url pc pc_slug=pc %}"><strong>{{ pc|KeyName:"soiltrack|options"|default:"n/a" }} / {{missing}}</a></li>
         {% endfor %}
         </ul>
     </div>

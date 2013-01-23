@@ -22,112 +22,44 @@ class CachedDataset(Dataset):
         return u"#".join([u"%s|%s" % (k, d.get(k))
                           for k in sorted(d.iterkeys())])
 
-    def summary_ident(self, select='all', groups=None, query=None,
-                      num_retries=Dataset.NUM_RETRIES, order_by=None, limit=0):
-        return (u"%(id)s_sumary_SELECT%(select)sGROUPS%(groups)sQUERY%(query)s"
-                u"ORDER_BY%(order_by)sLIMIT%(limit)s"
-                % {'id': self.id,
-                   'select': self._flat_dict(select),
-                   'groups': self._flat_dict(groups),
-                   'query': self._flat_dict(query),
-                   'order_by': order_by,
-                   'limit': limit})
+    def generic_ident(self, method, *args, **kwargs):
 
-    def info_ident(self, num_retries=Dataset.NUM_RETRIES):
-        return u"%(id)s_info" % {'id': self.id}
+        def ss(o):
+            return o.__str__().replace(' ', '_')
 
-    def data_ident(self, select=None, query=None,
-                   num_retries=Dataset.NUM_RETRIES,
-                   order_by=None, limit=0):
-        return (u"%(id)s_sumary_SELECT%(select)sQUERY%(query)s"
-                u"ORDER_BY%(order_by)sLIMIT%(limit)s"
-                % {'id': self.id,
-                   'select': self._flat_dict(select),
-                   'query': self._flat_dict(query),
-                   'order_by': order_by,
-                   'limit': limit})
+        id_string = u"%(method)s__"
+        for k, v in kwargs.items():
+            if k in ('num_retries', ):
+                continue
+            id_string += u"%(key)s:%(value)s" % {'key': k.upper(),
+                                                 'value': ss(v)}
+        if len(args):
+            id_string += u"##"
+            id_string += u"|#|".join([ss(arg) for arg in args])
 
-    def count_ident(self, field, method='count'):
-        return (u"%(id)s_count_FIELD%(field)sMETHOD%(method)s"
-                % {'id': self.id,
-                   'field': field,
-                   'method': method})
+        return id_string
 
-    @cache_result(ident=summary_ident, store='bamboo')
-    def get_summary(self, select='all', groups=None, query=None,
-                    num_retries=Dataset.NUM_RETRIES):
-        return super(CachedDataset, self).get_summary(select, groups, query,
-                     num_retries)
-
-    @cache_result(ident=info_ident, store='bamboo')
-    def get_info(self, num_retries=Dataset.NUM_RETRIES):
-        return super(CachedDataset, self).get_info(num_retries)
+    def data_ident(self, *args, **kwargs):
+        return self.generic_ident('get_data', *args, **kwargs)
 
     @cache_result(ident=data_ident, store='bamboo')
-    def get_data(self, select=None, query=None,
-                 num_retries=Dataset.NUM_RETRIES,
-                 order_by=None, limit=0):
-        return super(CachedDataset, self).get_data(select, query,
-                     num_retries, order_by, limit)
+    def get_data(self, *args, **kwargs):
+        return super(CachedDataset, self).get_data(*args, **kwargs)
+
+    def info_ident(self, *args, **kwargs):
+        return self.generic_ident('get_info', *args, **kwargs)
+
+    @cache_result(ident=info_ident, store='bamboo')
+    def get_info(self, *args, **kwargs):
+        return super(CachedDataset, self).get_info(*args, **kwargs)
+
+    def count_ident(self, *args, **kwargs):
+        return self.generic_ident('count', *args, **kwargs)
 
     @cache_result(ident=count_ident, store='bamboo')
-    def count(self, field, method='count'):
-        return super(CachedDataset, self).count(field, method)
+    def count(self, *args, **kwargs):
+        return super(CachedDataset, self).count(*args, **kwargs)
 
-
-
-# class Bamboo(PyBamboo):
-
-#     def _safe_json_loads(self, req):
-#         try:
-#             return load_json(req.text)
-#         except:
-#             raise ErrorParsingBambooData
-
-#     def info_ident(self, dataset_id):
-#         return u"get#%(url)s" % {'url': self.get_dataset_info_url(dataset_id)}
-
-#     @cache_result(ident=info_ident, store='bamboo')
-#     def info(self, dataset_id):
-#         return super(Bamboo, self).info(dataset_id)
-
-#     def query_ident(self, dataset_id, select=None, query=None, group=None,
-#               as_summary=False, first=False, last=False):
-#         params = {
-#             'select': select,
-#             'query': query,
-#             'group': group
-#         }
-
-#         # remove key with no value
-#         for key, value in params.items():
-#             if not value:
-#                 params.pop(key)
-#             else:
-#                 if isinstance(value, dict):
-#                     params[key] = json.dumps(value)
-
-#         if as_summary:
-#             url = self.get_dataset_summary_url(dataset_id)
-#         else:
-#             url = self.get_dataset_url(dataset_id)
-
-#         return (u"get#%(url)s#%(params)s"
-#                 % {'url': url, 'params': json.dumps(params)})
-
-#     @cache_result(ident=query_ident, store='bamboo')
-#     def query(self, dataset_id, select=None, query=None, group=None,
-#               as_summary=False, first=False, last=False, order_by=None):
-#         return super(Bamboo, self).query(dataset_id, select, query, group,
-#               as_summary, first, last, order_by)
-
-#     def count_submissions_ident(self, dataset_id, field, method='count'):
-#         url = self.get_dataset_summary_url(dataset_id)
-#         return u"get#%(url)s" % {'url': url}
-
-#     @cache_result(ident=count_submissions_ident, store='bamboo')
-#     def count_submissions(self, dataset_id, field, method='count'):
-#         return super(Bamboo, self).count_submissions(dataset_id, field, method)
 
 def getset_bamboo_dataset(project, is_registration=False):
     ''' Retrieve bamboo dataset ID on formhub and update model '''
@@ -184,28 +116,3 @@ def get_bamboo_dataset(project):
 
 def get_bamboo_ids_dataset(project):
     return get_option(project, 'bamboo_ids_dataset')
-
-
-# def count_submissions(project, field, method='count', is_registration=False):
-
-#     url, dataset_id = get_bamboo_dataset_url(project, is_registration)
-#     return Bamboo(url).count_submissions(dataset_id, field, method)
-
-
-# def bamboo_query(project,
-#                  select=None, query=None, group=None,
-#                  as_summary=False,
-#                  is_registration=False,
-#                  first=False, last=False,
-#                  print_url=False):
-
-#     url, dataset_id = get_bamboo_dataset_url(project, is_registration)
-#     return Bamboo(url).query(dataset_id, select, query, group,
-#                                as_summary, first, last)
-
-
-# def bamboo_store_calculation(project, formula_name, formula,
-#                              is_registration=False):
-
-#     url, dataset_id = get_bamboo_dataset_url(project, is_registration)
-#     return Bamboo(url).store_calculation(dataset_id, formula_name, formula)
