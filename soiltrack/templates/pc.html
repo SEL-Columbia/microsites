@@ -47,8 +47,8 @@
 {% if pc %}
 <h2>Sites</h2>
 <ul>
-    {% for site in sites %}
-    <li>{{ site }}</li>
+    {% for cp in sites %}
+    <li><a href="{% url cp cp=cp %}"><strong>{{ cp }}</a></li>
     {% endfor %}
 </ul>
 </div>

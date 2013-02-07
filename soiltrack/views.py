@@ -162,8 +162,9 @@ def dashboard(request):
                                          select=['block'],
                                          cache=True):
         try:
-
-            confluence_points.append(int(cp))
+            i = int(cp)
+            if not i in confluence_points:
+                confluence_points.append(i)
         except:
             continue
 
@@ -513,11 +514,14 @@ def location(request, cp):
     dataset = get_ests_dataset(request.user.project)
 
     today = datetime.today()
-    nb_collected_total = dataset.get_data(query={"block": {"$or": [cp, float(cp)]}},
+    nb_collected_total = dataset.get_data(query={"block": float(cp)},
                                           count=True, cache=True)
     nb_collected_today = dataset.get_data(query={"$and": [{"block": cp},
                                                           {"end": today.isoformat()}]},
                                           count=True, cache=True)
+    last_collection = dataset.get_data(query={"block": float(cp)},
+                                       order_by='end',
+                                       select=['end', 'barcode'], limit=1)[0]
     average_collected = 1
     nb_collected_day_1 = 1
     nb_collected_day_2 = 1
@@ -530,6 +534,7 @@ def location(request, cp):
                     'nb_collected_day_1': nb_collected_day_1,
                     'nb_collected_day_2': nb_collected_day_2,
                     'nb_collected_day_3': nb_collected_day_3,
+                    'last_collection': last_collection,
                     'today': today})
 
     response = render(request, 'cp.html', context)

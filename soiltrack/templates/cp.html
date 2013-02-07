@@ -11,6 +11,7 @@
 <table class="table table-striped hometable">
     <tr><th>Samples Collected to date</th><td class="samplenb">{{ nb_collected_total|numberformat }}</td></tr>
     <tr><th>Samples Collected today ({{ today }})</th><td class="samplenb">{{ nb_collected_today|numberformat }}</td></tr>
+    <tr><th>Last Sample Collected on</th><td class="samplenb">{{ last_collection.end }} (<a href="{% url sample_detail %}?sid={{ last_collection.barcode }}">{{ last_collection.barcode }}</a>)</td></tr>
     <!-- <tr><th>Average samples collected per Collection Day</th><td class="samplenb">{{ average_collected|numberformat }}</td></tr>
     <tr><th>Day -1</th><td class="samplenb">{{ nb_collected_day_1|numberformat }}</td></tr>
     <tr><th>Day -2</th><td class="samplenb">{{ nb_collected_day_2|numberformat }}</td></tr>
