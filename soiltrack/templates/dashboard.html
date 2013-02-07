@@ -12,24 +12,22 @@
     <h2>Progress Overview</h2>
 <div class="span5">
 
-    <!--
-        <div class="hero-unit">
-        <h1>Ethiopian Soil Tracking System</h1>
-    </div> -->
-
     <table class="table table-striped hometable">
-        <tr><th>Samples Collected<br />
+        <tr><th>Samples Scanned at Point of Collection<br />
         <div class="progress progress-striped progress-info "><div class="bar" style="width: {{ pc_collected|percent_raw }}%;"></div></div>
         </th><td class="samplenb">{{ nb_collected|numberformat }}</td></tr>
-        <tr><th>Samples Processed<br />
+        <tr><th>Samples Received at a Processing Center<br />
+        <div class="progress progress-striped progress-info "><div class="bar" style="width: {{ pc_received|percent_raw }}%;">{{ pc_received|percent }}</div></div>
+        </th><td class="samplenb">{{ nb_received|numberformat }}/<em>{{ nb_collected|numberformat }}</em></td></tr>
+        <tr><th>Top/Sub Samples Shipped from Processing Center<br />
         <div class="progress progress-striped progress-success"><div class="bar" style="width: {{ pc_processed|percent_raw }}%;">{{ pc_processed|percent }}</div></div>
         </th><td class="samplenb">{{ nb_processed|numberformat }}/<em>{{ nb_processing }}</em></td></tr>
-        <tr><th>Samples Sent To archive.<br />
+        <tr><th>Samples Sent To Archive.<br />
         <div class="progress progress-striped progress-warning"><div class="bar" style="width: {{ pc_analyzed|percent_raw }}%;">{{ pc_analyzed|percent }}</div></div>
         </th><td class="samplenb">{{ nb_analyzed|numberformat }}/<em>{{ nb_analyzing }}</em></td></tr>
-        <tr><th>Lost or Missing Samples<br />
+<!--         <tr><th>Lost or Missing Samples<br />
         <div class="progress progress-striped progress-danger"><div class="bar" style="width: {{ pc_lost|percent_raw }}%;">{{ pc_lost|percent }}</div></div>
-        </th><td class="samplenb">{{ nb_lost|numberformat }}</td></tr>
+        </th><td class="samplenb">{{ nb_lost|numberformat }}</td></tr> -->
     </table>
 
     <h2>Find a Sample</h2>
@@ -65,7 +63,13 @@
         <ul class="nav nav-list">
         <li class="nav-header">Processing Centers</li>
         {% for pc, missing in missings.items %}
-        <li><a href="{% url pc pc_slug=pc %}"><strong>{{ pc|KeyName:"soiltrack|options"|default:"n/a" }} / {{missing}}</a></li>
+        <li><a href="{% url pc pc_slug=pc %}"><strong>{{ pc|KeyName:"soiltrack|options"|default:"Other" }} / {{missing}}</a></li>
+        {% endfor %}
+        <li class="nav-header">NSTC Lab</li>
+        <li><a href="{% url nstc %}"><strong>NSTC Lab</a></li>
+        <li class="nav-header">Confluence Points</li>
+        {% for cp in confluence_points %}
+        <li><a href="{% url cp cp=cp %}"><strong>{{ cp }}</a></li>
         {% endfor %}
         </ul>
     </div>

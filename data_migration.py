@@ -29,7 +29,7 @@ PUBLIC_API_URL = u'https://www.formhub.org/atasoils/forms/%(form)s/public_api'
 FH_TIMEOUT = 60
 
 FH_LOGIN = u'atasoils'
-FH_PASSWORD = u'soilmap'
+FH_PASSWORD = u''
 BAMBOO_URL = u'http://bamboo.io/'
 
 FORMS = [

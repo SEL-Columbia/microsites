@@ -54,19 +54,22 @@ def get_processing_centers(dataset):
             if isinstance(center, basestring)]
 
 
-def get_missing_trigger(request=None):
+def get_missing_trigger(request=None, ident=''):
     default = 30
+    if ident.startswith('pc_') or ident.startswith('lab_'):
+        default = 7
     if not request:
         return default
 
     try:
-        return int(request.COOKIES.get('ests_missing_trigger', default))
+        return int(request.COOKIES.get(u'ests_missing_trigger_%s' % ident,
+                                       default))
     except:
         return default
 
 
-def set_missing_trigger(response, value):
-    response.set_cookie('ests_missing_trigger', value)
+def set_missing_trigger(response, ident, value):
+    response.set_cookie('ests_missing_trigger_%s' % ident, value)
 
 
 @project_required(guests=DEFAULT_PROJECT)
@@ -84,23 +87,28 @@ def dashboard(request):
 
     # total number of plots (EthioSIS_ET submissions)
     try:
-        nb_plots = len(dataset.get_data(select=['plot'],
-                                        distinct='plot',
-                                        cache=True))
+        nb_plots = dataset.get_data(select=['plot'],
+                                    distinct='plot',
+                                    count=True,
+                                    cache=True)
     except (BambooError, ErrorParsingBambooData):
         nb_plots = 0
 
     def count_submission_in_step(step):
         try:
-            query = {"step%d_survey_day" % step: {"$gt": 0}}
-            return len(dataset.get_data(query=query,
-                                        select=['barcode'],
-                                        cache=True))
+            field = "step%d_survey_day" % step
+            if step == 0:
+                field = "end"
+            query = {field: {"$gt": 0}}
+            return dataset.get_data(query=query,
+                                    select=['barcode'],
+                                    count=True,
+                                    cache=True)
         except (BambooError, ErrorParsingBambooData):
             return 0
 
     # missing trigger from cookie
-    ests_missing_trigger = get_missing_trigger(request)
+    ests_missing_trigger = get_missing_trigger(request, 'dashboard')
     new_missing_trigger = request.GET.get('trigger', None)
     if new_missing_trigger:
         try:
@@ -108,11 +116,26 @@ def dashboard(request):
         except:
             new_missing_trigger = False
 
-    # collected samples (ESTS1)
-    nb_collected = count_submission_in_step(1)
+    # nb sent from fields
+    nb_sent_from_field = dataset.get_data(query={"barcode": {"$exists": True}},
+                                          select=['barcode'],
+                                          count=True,
+                                          cache=True)
+
+    # collected samples
+    nb_collected = count_submission_in_step(0)
+
+    # received samples (ESTS1)
+    nb_received = count_submission_in_step(1)
 
     # being processed samples (ESTS2)
-    nb_processing = count_submission_in_step(2)
+    # nb_processing = count_submission_in_step(2)
+    nb_processing = dataset.get_data(query={"step2_survey_day": {"$gt": 0},
+                                            "position": {"$in": ["top_qr",
+                                                                 "sub_qr"]}},
+                                     select=['barcode'],
+                                     count=True,
+                                     cache=True)
 
     # processed samples (ESTS3)
     nb_processed = count_submission_in_step(3)
@@ -131,6 +154,18 @@ def dashboard(request):
                           nb_analyzing, nb_analyzed, nb_archived])
 
     processing_centers = get_processing_centers(dataset)
+
+    # confluence points
+    confluence_points = []
+    for cp in dataset.get_data(query={"block": {"$exists": True}},
+                                         distinct='block',
+                                         select=['block'],
+                                         cache=True):
+        try:
+
+            confluence_points.append(int(cp))
+        except:
+            continue
 
     # last events
     last_events = []
@@ -163,13 +198,13 @@ def dashboard(request):
     trigger_day_ago = time.mktime((datetime.now()
                                   - timedelta(ests_missing_trigger)).timetuple())
     for center in missings.keys():
-        print(center)
         try:
             query = {"step2_end_time": {"$lte": trigger_day_ago},
                      "step2_processing_center": center}
-            nb_missing = len(dataset.get_data(query=query,
-                                              select=['barcode'],
-                                              cache=True))
+            nb_missing = dataset.get_data(query=query,
+                                          select=['barcode'],
+                                          count=True,
+                                          cache=True)
         except (BambooError, ErrorParsingBambooData):
             nb_missing = 0
         missings[center] = nb_missing
@@ -178,10 +213,13 @@ def dashboard(request):
     nb_lost = sum(missings.values())
 
     context.update({'nb_plots': nb_plots,
+                    'nb_sent_from_field': nb_sent_from_field,
                     'nb_collected': nb_collected,
-                    'pc_collected': pc(nb_collected, nb_collected),
+                    'pc_collected': pc(nb_collected, nb_sent_from_field),
+                    'nb_received': nb_received,
+                    'pc_received': pc(nb_received, nb_collected),
                     'nb_processed': nb_processed,
-                    'pc_processed': pc(nb_processed, nb_collected),
+                    'pc_processed': pc(nb_processed, nb_processing),
                     'nb_analyzed': nb_analyzed,
                     'pc_analyzed': pc(nb_analyzed, nb_collected),
                     'nb_lost': nb_lost,
@@ -193,11 +231,12 @@ def dashboard(request):
                     'last_events': last_events,
                     'processing_centers': processing_centers,
                     'ests_missing_trigger': ests_missing_trigger,
-                    'missings': missings})
+                    'missings': missings,
+                    'confluence_points': confluence_points})
 
     response = render(request, 'dashboard.html', context)
     if new_missing_trigger:
-        set_missing_trigger(response, new_missing_trigger)
+        set_missing_trigger(response, 'dashboard', new_missing_trigger)
     return response
 
 
@@ -253,42 +292,56 @@ def processing_center(request, pc_slug):
     if not pc_slug in processing_centers:
         raise Http404(u"Unable to find matching Processing Center")
 
-    seven_day_ago = datetime.now() - timedelta(400)
-    seven_day_ago = time.mktime((datetime.now() - timedelta(7)).timetuple())
+    # missing trigger from cookie
+    ests_missing_trigger = get_missing_trigger(request, 'pc_%s' % pc_slug)
+    new_missing_trigger = request.GET.get('trigger', None)
+    if new_missing_trigger:
+        try:
+            ests_missing_trigger = int(new_missing_trigger)
+        except:
+            new_missing_trigger = False
+
+    # seven_day_ago = time.mktime((datetime.now() - timedelta(7)).timetuple())
+    trigger_day_ago = time.mktime((datetime.now()
+                                  - timedelta(ests_missing_trigger)).timetuple())
 
     try:
         query = {"step2_end_time": {"$gt": 0},
                  "step2_processing_center": pc_slug}
-        nb_received = len(dataset.get_data(query=query,
-                                           select=['barcode'],
-                                           cache=True))
+        nb_received = dataset.get_data(query=query,
+                                       select=['barcode'],
+                                       count=True,
+                                       cache=True)
     except (BambooError, ErrorParsingBambooData):
         nb_received = 0
 
     try:
-        query = {"step2_end_time": {"$gte": seven_day_ago},
+        query = {"step2_end_time": {"$gte": trigger_day_ago},
                  "step2_processing_center": pc_slug}
-        nb_received_7days = len(dataset.get_data(query=query,
-                                                 select=['barcode'],
-                                                 cache=True))
+        nb_received_7days = dataset.get_data(query=query,
+                                             select=['barcode'],
+                                             count=True,
+                                             cache=True)
     except (BambooError, ErrorParsingBambooData):
         nb_received_7days = 0
 
     try:
         query = {"step3_end_time": {"$gt": 0},
                  "step2_processing_center": pc_slug}
-        nb_processed = len(dataset.get_data(query=query,
-                                           select=['barcode'],
-                                           cache=True))
+        nb_processed = dataset.get_data(query=query,
+                                        select=['barcode'],
+                                        count=True,
+                                        cache=True)
     except (BambooError, ErrorParsingBambooData):
         nb_processed = 0
 
     try:
-        query = {"step3_end_time": {"$gte": seven_day_ago},
+        query = {"step3_end_time": {"$gte": trigger_day_ago},
                  "step2_processing_center": pc_slug}
-        nb_processed_7days = len(dataset.get_data(query=query,
-                                                 select=['barcode'],
-                                                 cache=True))
+        nb_processed_7days = dataset.get_data(query=query,
+                                              select=['barcode'],
+                                              count=True,
+                                              cache=True)
     except (BambooError, ErrorParsingBambooData):
         nb_processed_7days = 0
 
@@ -324,7 +377,7 @@ def processing_center(request, pc_slug):
         pass
 
     dest_and_arrived = dataset.get_data(query={"$or": [{"step1_pc_destination": pc_slug},
-                                                      {"step2_processing_center": pc_slug}]},
+                                                       {"step2_processing_center": pc_slug}]},
                                          select=['barcode',
                                                  'step1_pc_destination',
                                                  'step2_processing_center',
@@ -345,9 +398,142 @@ def processing_center(request, pc_slug):
                     'avg_processing': avg_processing,
                     'remaining_samples': remaining_samples,
                     'sites': sites,
+                    'ests_missing_trigger': ests_missing_trigger,
                     })
 
-    return render(request, 'pc.html', context)
+    response = render(request, 'pc.html', context)
+    if new_missing_trigger:
+        set_missing_trigger(response, str(u'pc_%s' % pc_slug),
+                            new_missing_trigger)
+    return response
+
+
+@project_required(guests=DEFAULT_PROJECT)
+def nstc_lab(request):
+    context = {'category': 'pc'}
+
+    dataset = get_ests_dataset(request.user.project)
+
+    # missing trigger from cookie
+    ests_missing_trigger = get_missing_trigger(request, 'lab_nstc')
+    new_missing_trigger = request.GET.get('trigger', None)
+    if new_missing_trigger:
+        try:
+            ests_missing_trigger = int(new_missing_trigger)
+        except:
+            new_missing_trigger = False
+
+    # seven_day_ago = time.mktime((datetime.now() - timedelta(7)).timetuple())
+    trigger_day_ago = time.mktime((datetime.now()
+                                  - timedelta(ests_missing_trigger)).timetuple())
+
+    try:
+        query = {"step4_end_time": {"$gt": 0}}
+        nb_received = dataset.get_data(query=query,
+                                       select=['barcode'],
+                                       count=True,
+                                       cache=True)
+    except (BambooError, ErrorParsingBambooData):
+        nb_received = 0
+
+    try:
+        query = {"step4_end_time": {"$gte": trigger_day_ago}}
+        nb_received_7days = dataset.get_data(query=query,
+                                             select=['barcode'],
+                                             count=True,
+                                             cache=True)
+    except (BambooError, ErrorParsingBambooData):
+        nb_received_7days = 0
+
+    try:
+        query = {"step5_end_time": {"$gt": 0}}
+        nb_processed = dataset.get_data(query=query,
+                                        select=['barcode'],
+                                        count=True,
+                                        cache=True)
+    except (BambooError, ErrorParsingBambooData):
+        nb_processed = 0
+
+    try:
+        query = {"step5_end_time": {"$gte": trigger_day_ago}}
+        nb_processed_7days = dataset.get_data(query=query,
+                                              select=['barcode'],
+                                              count=True,
+                                              cache=True)
+    except (BambooError, ErrorParsingBambooData):
+        nb_processed_7days = 0
+
+    # TODO: retry with pybamboo.
+    # at this time, I can't make mean(step3_surey_day - step2_survey_day)
+    # to work as expected
+    def duration_step(data):
+        try:
+            return (data['step5_end_time'] - data['step4_end_time']).days
+        except TypeError:
+            return None
+    durations = [duration_step(data)
+                 for data in
+                 dataset.get_data(select=['step5_end_time',
+                                          'step4_end_time', ],
+                                  cache=True)
+                 if duration_step(data) is not None]
+
+    try:
+        avg_processing = reduce(lambda x, y: x + y, durations) / len(durations)
+    except TypeError:
+        avg_processing = u"n/a"
+
+    remaining_samples = [elem.get('barcode') for elem in
+                         dataset.get_data(query={"$and": [
+                                                    {"position": {"$in": ["top_qr", "sub_qr"]},
+                                                     "step4_end_time": {"$not": {"$gt": 0}}}]},
+                                         select=['barcode'],
+                                         cache=True)]
+
+    context.update({'pc': None,
+                    'nb_received': nb_received,
+                    'nb_received_7days': nb_received_7days,
+                    'nb_processed': nb_processed,
+                    'nb_processed_7days': nb_processed_7days,
+                    'avg_processing': avg_processing,
+                    'remaining_samples': remaining_samples,
+                    'ests_missing_trigger': ests_missing_trigger,
+                    })
+
+    response = render(request, 'pc.html', context)
+    if new_missing_trigger:
+        set_missing_trigger(response, 'lab_nstc', new_missing_trigger)
+    return response
+
+
+@project_required(guests=DEFAULT_PROJECT)
+def location(request, cp):
+    context = {'category': 'cp'}
+
+    dataset = get_ests_dataset(request.user.project)
+
+    today = datetime.today()
+    nb_collected_total = dataset.get_data(query={"block": {"$or": [cp, float(cp)]}},
+                                          count=True, cache=True)
+    nb_collected_today = dataset.get_data(query={"$and": [{"block": cp},
+                                                          {"end": today.isoformat()}]},
+                                          count=True, cache=True)
+    average_collected = 1
+    nb_collected_day_1 = 1
+    nb_collected_day_2 = 1
+    nb_collected_day_3 = 1
+
+    context.update({'cp': cp,
+                    'nb_collected_total': nb_collected_total,
+                    'nb_collected_today': nb_collected_today,
+                    'average_collected': average_collected,
+                    'nb_collected_day_1': nb_collected_day_1,
+                    'nb_collected_day_2': nb_collected_day_2,
+                    'nb_collected_day_3': nb_collected_day_3,
+                    'today': today})
+
+    response = render(request, 'cp.html', context)
+    return response
 
 
 @project_required(guests=DEFAULT_PROJECT)

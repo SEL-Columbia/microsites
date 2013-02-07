@@ -1,17 +1,21 @@
 {% extends "base.html" %}
 {% load mstag %}
 
-{% block page_title %}{{ pc|title }} PC – ESTS{% endblock %}
+{% block page_title %}{% if pc %}{{ pc|title }} PC{% else %}NSTC Lab{% endif %} – ESTS{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ STATIC_URL }}css/soiltrack.css" type="text/css" media="screen,projection" />{% endblock %}
 
 {% block content %}
 
-<h1>{{ pc_name|title }} Processing Center (<small>{{ pc }}</small>)</h1>
+{% if pc %}
+<h1>{{ pc|KeyName:"soiltrack|options"|default:"Other" }} Processing Center (<small>{{ pc }}</small>)</h1>
+{% else %}
+<h1>NSTC Lab</h1>
+{% endif %}
 <table class="table table-striped hometable">
-    <tr><th>Samples Received to date</th><td class="samplenb">{{ nb_received|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Received Samples</a></td> --></tr>
-    <tr><th>Samples Received in <strong>past 7 days</strong></th><td class="samplenb">{{ nb_received_7days|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Samples Received in last 7d</a></td> --></tr>
-    <tr><th>Samples Processed to date</strong></th><td class="samplenb">{{ nb_processed|numberformat }}<br /><em>Avg: {{ avg_processing }}days</em></td><!-- <td><a href="" class="btn  btn-small">Browse Processed Samples</a></td> --></tr>
-    <tr><th>Samples Processed in <strong>past 7 days</strong></th><td class="samplenb">{{ nb_processed_7days|numberformat }}</td><!-- <td><a href="" class="btn  btn-small">Browse Samples Processed in last 7d</a></td> --></tr>
+    <tr><th>Samples Received to date</th><td class="samplenb">{{ nb_received|numberformat }}</td></tr>
+    <tr><th>Samples Received in <strong>past {{ ests_missing_trigger }} days</strong></th><td class="samplenb">{{ nb_received_7days|numberformat }}</td></tr>
+    <tr><th>Samples Processed to date</strong></th><td class="samplenb">{{ nb_processed|numberformat }}<br /><em>Avg: {{ avg_processing }}days</em></td></tr>
+    <tr><th>Samples Processed in <strong>past {{ ests_missing_trigger }} days</strong></th><td class="samplenb">{{ nb_processed_7days|numberformat }}</td></tr>
 </table>
 
 <div class="row-fluid">
@@ -19,7 +23,11 @@
 <div class="span7">
 
 <h2>Remaining Samples</h2>
+{% if pc %}
 <p>Samples destinated to this P.C which never arrived</p>
+{% else %}
+<p>Top & Sub samples which has not yet made it to the Lab.</p>
+{% endif %}
 <ul>
     {% for sample in remaining_samples %}
     <li><a href="{% url sample_detail %}?sid={{ sample }}">{{ sample }}</a></li>
@@ -29,6 +37,14 @@
 </div>
 
 <div class="span4">
+
+    <h2>Change Past Days Trigger</h2>
+    <form class="form-search form-inline" method="get" action="{% url pc pc_slug=pc %}">
+    <input type="text" class="input-medium search-query" placeholder="Number of days" value="{{ ests_missing_trigger }}" name="trigger">
+    <button type="submit" class="btn" id="find-btn">Set New Value</button>
+    </form>
+
+{% if pc %}
 <h2>Sites</h2>
 <ul>
     {% for site in sites %}
@@ -36,5 +52,6 @@
     {% endfor %}
 </ul>
 </div>
+{% endif %}
 
 {% endblock %}

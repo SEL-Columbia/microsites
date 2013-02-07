@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load mstag %}
+
+{% block page_title %}Confluence Point {{ cp }} – ESTS{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ STATIC_URL }}css/soiltrack.css" type="text/css" media="screen,projection" />{% endblock %}
+
+{% block content %}
+
+<h1>Confluence Point {{ cp }}</h1>
+
+<table class="table table-striped hometable">
+    <tr><th>Samples Collected to date</th><td class="samplenb">{{ nb_collected_total|numberformat }}</td></tr>
+    <tr><th>Samples Collected today ({{ today }})</th><td class="samplenb">{{ nb_collected_today|numberformat }}</td></tr>
+    <!-- <tr><th>Average samples collected per Collection Day</th><td class="samplenb">{{ average_collected|numberformat }}</td></tr>
+    <tr><th>Day -1</th><td class="samplenb">{{ nb_collected_day_1|numberformat }}</td></tr>
+    <tr><th>Day -2</th><td class="samplenb">{{ nb_collected_day_2|numberformat }}</td></tr>
+    <tr><th>Day -3</th><td class="samplenb">{{ nb_collected_day_3|numberformat }}</td></tr> -->
+</table>
+
+{% endblock %}
