@@ -511,13 +511,27 @@ def nstc_lab(request):
 def location(request, cp):
     context = {'category': 'cp'}
 
+    try:
+        cp = int(cp)
+    except ValueError:
+        try:
+            cp = float(cp)
+        except:
+            return Http404(u"Incorect Confluence Point")
+
+
     dataset = get_ests_dataset(request.user.project)
 
     today = datetime.today()
-    nb_collected_total = dataset.get_data(query={"block": float(cp)},
+    ts = datetime(today.year, today.month, today.day, 0, 0, 0)
+    te = ts + timedelta(1)
+
+    nb_collected_total = dataset.get_data(query={"block": cp},
                                           count=True, cache=True)
-    nb_collected_today = dataset.get_data(query={"$and": [{"block": cp},
-                                                          {"end": today.isoformat()}]},
+    nb_collected_today = dataset.get_data(query={"block": cp,
+                                                 "end": {"$gt": time.mktime(ts.timetuple()),
+                                                         "$lt": time.mktime(te.timetuple())}
+                                                },
                                           count=True, cache=True)
     last_collection = dataset.get_data(query={"block": float(cp)},
                                        order_by='end',
