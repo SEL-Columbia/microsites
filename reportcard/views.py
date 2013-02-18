@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from pybamboo.connection import Connection
-from pybamboo.exceptions import BambooError
+from pybamboo.exceptions import BambooError, ErrorParsingBambooData
 
 from constants import (REPORTS_AGE_GROUPS,
                        REPORTS_READING_LEVELS, REPORTS_NUMERACY_LEVELS)
@@ -49,14 +49,14 @@ def home(request):
 
     # total number of submissions
     try:
-        nb_submissions = int(main_dataset.count(u'general_information_age'))
-    except BambooError as e:
+        nb_submissions = main_dataset.get_data(count=True, cache=True)
+    except (BambooError, ErrorParsingBambooData) as e:
         print(e)
         nb_submissions = None
 
     # total number of registered teachers
     try:
-        nb_teachers = int(teacher_dataset.count(u'school_district'))
+        nb_teachers = teacher_dataset.get_data(count=True, cache=True)
     except BambooError:
         nb_teachers = None
 

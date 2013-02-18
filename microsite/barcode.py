@@ -110,9 +110,12 @@ def get_random_urlid(as_tuple=False):
 def get_ids_from_url(url):
     try:
         url_uid, sid = url.rsplit('?short=', 1)
-    except ValueError:
+    except (ValueError, AttributeError):
         url_uid = url
-        sid = short_id_from(url.rsplit('/', 1)[-1])
+        try:
+            sid = short_id_from(url.rsplit('/', 1)[-1])
+        except:
+            sid = ''
     try:
         _, uid = url_uid.rsplit('/', 1)
     except:
