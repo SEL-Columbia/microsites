@@ -207,7 +207,7 @@ def submit_xml_forms_formhub_raw(submission_url, xforms=[], as_bulk=False,
                 os.write(fileh, form_xml.encode('utf-8'))
                 os.close(fileh)
                 # add the temp xml file to the zip file
-                zfile.write(form_file)
+                zfile.write(form_file, os.path.basename(form_file))
                 try:
                     os.remove(form_file)
                 except:
