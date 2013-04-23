@@ -27,7 +27,10 @@ class CachedDataset(Dataset):
         def ss(o):
             return o.__str__().replace(' ', '_')
 
-        id_string = u"%(method)s__"
+        id_string = (u"%(url)s__%(method)s__%(dataset)s__"
+                     % {'method': method,
+                        'url': self._connection.url,
+                        'dataset': self.id})
         for k, v in kwargs.items():
             if k in ('num_retries', ):
                 continue
