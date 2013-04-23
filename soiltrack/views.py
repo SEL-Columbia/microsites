@@ -47,10 +47,13 @@ def get_ests_dataset(project):
 
 
 def get_processing_centers(dataset):
-    return [center for center in
-            dataset.get_data(select=['step1_pc_destination'],
-                             distinct='step1_pc_destination',
-                             cache=True)
+    try:
+        centers = dataset.get_data(select=['step1_pc_destination'],
+                                   distinct='step1_pc_destination',
+                                   cache=True)
+    except ErrorParsingBambooData:
+        centers = []
+    return [center for center in centers
             if isinstance(center, basestring)]
 
 
