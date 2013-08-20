@@ -57,6 +57,7 @@ def soil_results(sample):
         ('ec', {n: u"Soluble Salts", v: 0, b: bno, lvl: lvlb, u: udsm}),
         ('ph_water', {n: u"Water pH", v: 0, b: bno, lvl: lvlb, u: un}),
         ('ph_cacl', {n: u"Salt pH", v: 0, b: bno, lvl: lvlb, u: un}),
+        ('ph_cacl_reco', {n: u"pH Recommendation", v: 0, b: bno, lvl: lvlb, u: un}),
         ('delta_ph', {n: u"Δ pH", v: 0, b: bno, lvl: lvlb, u: un}),
         ('soil_bulk_density', {n: u"Soil Bulk Density", v: 0, b: bno, lvl: lvlb, u: umgc3}),
         ('soil_moisture', {n: u"Soil Moisture at Sampling", v: 0, b: bno, lvl: lvlb, u: un}),
@@ -66,6 +67,7 @@ def soil_results(sample):
         ('soil_phosphorus', {n: u"Soil Phosphorus (PO4--P)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
         ('soil_sulfate', {n: u"Soil Sulfate (SO4--S)", v: 0, b: bno, lvl: lvlb, u: umgkg}),
         # ('soil_organic_matter', {n: u"Soil Organic Matter", v: 0, b: bno, lvl: lvlb}),
+        ('active_carbon', {n: u"Active Carbon", v: 0, b: bno, lvl: lvlb}),
     ])
 
     #
@@ -117,12 +119,11 @@ def soil_results(sample):
     # pH CaCl
     #
     ph_cacl_levels = OrderedDict([
-        (4.0, {b: bred, lvl: lvll, lvlt: u"pH is limiting: soil exhibits severe aluminum toxicity"}),
-        (4.8, {b: bred, lvl: lvll, lvlt: u"pH is limiting: soil exhibits aluminum and manganese toxicity."}),
-        (5.4, {b: byellow, lvl: lvlm, lvlt: u"pH is somewhat limiting."}),
+        (4.0, {b: bred, lvl: lvlvl, lvlt: u"pH is limiting: soil exhibits severe aluminum toxicity"}),
+        (5.0, {b: bred, lvl: lvll, lvlt: u"pH is limiting: soil exhibits aluminum and manganese toxicity."}),
+        (5.5, {b: byellow, lvl: lvlm, lvlt: u"pH is somewhat limiting."}),
         (6.5, {b: bgreen, lvl: lvlo, lvlt: u"Optimal pH for good plant productivity."}),
         (7.5, {b: bgreen, lvl: lvlh, lvlt: u"pH is not limiting. However, may be Fe, Mn, Zn deficiencies in sandy soils."}),
-        (8.0, {b: byellow, lvl: lvlh, lvlt: u"pH is not limiting. However, may be Fe, Mn, Zn deficiencies in sandy soils."}),
         (8.5, {b: bred, lvl: lvlh, lvlt: u"pH is somewhat limiting (calcareous soil). Will likely observe Fe, Mn, Zn, deficiencies."}),
         ('_', {b: bred, lvl: lvlvh, lvlt: u"Severe pH limitations with sodium problems (sodic)"}),
         ])
@@ -135,6 +136,77 @@ def soil_results(sample):
      # update badge levels
     if not results['ph_cacl'][v] is None:
         results['ph_cacl'].update(level_in_range(results['ph_cacl'][v], ph_cacl_levels))
+
+    #
+    # pH recomendation
+    #
+    rec_nutrients = {
+        'n': {
+            1: u"Urine, manure, DAP, Potassium nitrate, NPK, limit use of urea, avoid ammonium sulfate",
+            2: u"Urine, manure, DAP, Potassium nitrate, NPK, limit use of urea, avoid ammonium sulfate",
+            3: u"Urine, manure, urea, DAP, Potassium nitrate, NPK, limit use of Ammonium Sulfate",
+            4: u"Urine, manure, urea, DAP, Potassium nitrate, NPK, Ammonium Sulfate",
+            5: u"Urine, manure, urea, Ammonium Sulfate, DAP, Potassium nitrate, NPK",
+            6: u"Urine, manure, Ammonium Sulfate, DAP, Potassium nitrate, NPK, limit use of Urea",
+            7: u"Urine, manure, Ammonium Sulfate, DAP, Potassium nitrate, NPK, limit use of Urea",
+        },
+        'p': {
+            1: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, urine, ash",
+            2: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, urine, ash",
+            3: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, urine, ash",
+            4: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, urine, ash",
+            5: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, urine, ash",
+            6: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, Urine, limit ash",
+            7: u"DAP, NPK, Triple Super Phosphate, Phosphate rock, urine, avoid ash",
+        },
+        'k': {
+            1: u"Urine, Ash, NPK, Potash, Potassium nitrate",
+            2: u"Urine, Ash, NPK, Potash, Potassium nitrate",
+            3: u"Urine, Ash, NPK, Potash, Potassium nitrate",
+            4: u"Urine, Ash, NPK, Potash, Potassium nitrate",
+            5: u"Urine, Ash, NPK, Potash, Potassium nitrate",
+            6: u"Urine, NPK, Potash, Potassium nitrate, Limit use of ash",
+            7: u"Urine, NPK, Potash, Potassium nitrate, avoid ash",
+        },
+        's': {
+            1: u"Gypsum, Potassium sulphate, Epson Magnesium sulphate, Urine, ash, avoid Ammonium Sulfate",
+            2: u"Gypsum, Potassium sulphate, Epson Magnesium sulphate, Urine, ash, avoid Ammonium Sulfate",
+            3: u"Gypsum, Potassium sulphate, Epson Magnesium sulphate, Urine, ash, avoid Ammonium Sulfate",
+            4: u"Gypsum, Potassium sulphate, Epson Magnesium sulphate, Urine, ash, limit Ammonium Sulfate",
+            5: u"Gypsum, Ammonium Sulfate, Potassium sulphate, Epson Magnesium sulphate, Urine, ash",
+            6: u"Gypsum,  Ammonium Sulfate, Potassium sulphate, Epson Magnesium sulphate, Urine, limit use of ash",
+            7: u"Gypsum,  Ammonium Sulfate, Potassium sulphate, Epson Magnesium sulphate, Urine, avoid ash",
+        }
+    }
+
+    def txtreco(num, text):
+        gt = lambda l: rec_nutrients.get(l, {}).get(num)
+        return u"{text} N ({n}), P ({p}), K ({k}), S ({s})".format(text=text,
+                                                                   n=gt('n'),
+                                                                   p=gt('p'),
+                                                                   k=gt('k'),
+                                                                   s=gt('s'))
+
+    if results['ph_cacl'][lvl] in (lvlvl, lvll):
+        results['ph_cacl_reco'][v] = txtreco(1, u"Apply ash or lime, apply manure, green manure.")
+    elif results['ph_cacl'][lvl] == lvlm:
+        results['ph_cacl_reco'][v] = txtreco(3, u"Avoid acidifying fertilizer such as ammonium "
+                                                u"sulfate. Limit use of  urea. May be some "
+                                                u"value in applying ash or lime.")
+    elif results['ph_cacl'][lvl] == lvlo:
+        results['ph_cacl_reco'][v] = txtreco(4, u"Monitor pH for changes")
+    elif results['ph_cacl'][lvl] == lvlh and results['ph_cacl'][v] < 7.5:
+        results['ph_cacl_reco'][v] = txtreco(5, u"Apply manure and use green manure")
+    elif results['ph_cacl'][lvl] == lvlh and results['ph_cacl'][v] >= 7.5:
+        results['ph_cacl_reco'][v] = txtreco(6, u"Use caution when applying urea. "
+                                                u"Apply sulfur (ammonium sulfate "
+                                                u"or elemental) and manure.")
+    elif results['ph_cacl'][lvl] == lvlvh:
+        results['ph_cacl_reco'][v] = txtreco(7, u"Apply gypsum. Avoid urea and ash.")
+    else:
+        results['ph_cacl_reco'][v] = None
+
+
 
     #
     # Δ pH
@@ -267,11 +339,11 @@ def soil_results(sample):
     # soil nitrate
     #
     nitrate_fertility_levels = OrderedDict([
-        (5, {b: bvl, lvl: lvlvl, lvlt: u"Yes, Full N recommended."}),
-        (10, {b: bl, lvl: lvll, lvlt: u"Yes, Full N recommended."}),
-        (15, {b: bm, lvl: lvlm, lvlt: u"Yes, ¾ N recommended."}),
-        (20, {b: bh, lvl: lvlmh, lvlt: u"Yes, ½ N recommended."}),
-        (30, {b: bh, lvl: lvlh, lvlt: u"Yes, ¼ N recommended."}),
+        (21, {b: bvl, lvl: lvlvl, lvlt: u"Yes, Full N recommended."}),
+        (42, {b: bl, lvl: lvll, lvlt: u"Yes, ¾ N recommended."}),
+        (65, {b: bm, lvl: lvlm, lvlt: u"Yes, ½ N recommended."}),
+        (90, {b: bh, lvl: lvlmh, lvlt: u"Yes, ¼ N recommended."}),
+        (120, {b: bh, lvl: lvlh, lvlt: u"No N more recommended."}),
         ('_', {b: bvh, lvl: lvlvh, lvlt: u"No N recommended."}),
         ])
 
@@ -280,9 +352,14 @@ def soil_results(sample):
         blank_nitrate = float(sample.get('nitrate_blank_nitrate', None))
         results['soil_nitrate'][v] = (
                                       (sample_nitrate - blank_nitrate)
-                                      * (30.0
-                                         / ((1.0 - percent_moisture_by_weight) * 15.0))
-                                      ) * (1 / 4.42)
+                                      * (20.0
+                                         / (1 - (percent_moisture_by_weight * 10.0))))
+        # results['soil_nitrate'][v] = (
+        #                               (sample_nitrate - blank_nitrate)
+        #                               * (20.0
+        #                                  / ((1.0 - percent_moisture_by_weight) * 10.0))
+        #                               ) * (1 / 4.42)
+
     except:
         results['soil_nitrate'][v] = None
 
@@ -306,9 +383,14 @@ def soil_results(sample):
         blank_potassium = float(sample.get('potassium_blank_potassium', None))
         results['soil_potassium'][v] = (
                                         (sample_potassium - blank_potassium)
-                                        * (30.0
-                                           / ((1.0 - percent_moisture_by_weight) * 15.0))
-                                        )
+                                        * (20.0
+                                           / (1.0 - (percent_moisture_by_weight * 10.0))))
+
+        # results['soil_potassium'][v] = (
+        #                                 (sample_potassium - blank_potassium)
+        #                                 * (30.0
+        #                                    / ((1.0 - percent_moisture_by_weight) * 15.0))
+        #                                 )
     except:
         results['soil_potassium'][v] = None
 
@@ -330,28 +412,35 @@ def soil_results(sample):
     try:
         sample_phosphorus_ppb_meter = float(sample.get('phosphorus_ppb_meter_sample_phosphorus_ppb_meter', None))
         blank_phosphorus_ppb_meter = float(sample.get('phosphorus_ppb_meter_blank_phosphorus_ppb_meter', None))
-        soil_phosphorus_ppb = (
-                                (
-                                 (sample_phosphorus_ppb_meter - blank_phosphorus_ppb_meter)
-                                 * (10.0 / 2.0)
-                                 * (30.0 /
-                                    ((1.0 - percent_moisture_by_weight) * 15.0))
-                                ) / 1000
-                              )
+        soil_phosphorus_ppb = ((sample_phosphorus_ppb_meter - blank_phosphorus_ppb_meter)
+                              * (10.0 / 2) * (20.0 / (1.0 - (percent_moisture_by_weight * 10.0))))
+
+        # soil_phosphorus_ppb = (
+        #                         (
+        #                          (sample_phosphorus_ppb_meter - blank_phosphorus_ppb_meter)
+        #                          * (10.0 / 2.0)
+        #                          * (30.0 /
+        #                             ((1.0 - percent_moisture_by_weight) * 15.0))
+        #                         ) / 1000
+        #                       )
     except:
         soil_phosphorus_ppb = None
 
     try:
         sample_phosphorus_ppm_meter = float(sample.get('phosphorus_ppm_meter_sample_phosphorus_ppm_meter', None))
         blank_phosphorus_ppm_meter = float(sample.get('phosphorus_ppm_meter_blank_phosphorus_ppm_meter', None))
-        soil_phosphorus_ppm = (
-                               (
-                                (sample_phosphorus_ppm_meter - blank_phosphorus_ppm_meter)
-                                * (10.0 / 2.0)
-                                * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
-                                * (30.97 / 94.97)
-                               )
-                              )
+        soil_phosphorus_ppm = ((sample_phosphorus_ppm_meter - blank_phosphorus_ppm_meter)
+                               * (10.0 / 2) * (20.0 / (1.0 - (percent_moisture_by_weight * 10.0))))
+
+        # (${sample_phosphorus_ppm_meter_x}-${phosphorus_ppm_zero})*(10/2)*(20/(1-(${percent_moisture_by_weight_x}*10)))*(30.97/94.97)
+        # soil_phosphorus_ppm = (
+        #                        (
+        #                         (sample_phosphorus_ppm_meter - blank_phosphorus_ppm_meter)
+        #                         * (10.0 / 2.0)
+        #                         * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
+        #                         * (30.97 / 94.97)
+        #                        )
+        #                       )
     except:
         soil_phosphorus_ppm = None
 
@@ -432,5 +521,16 @@ def soil_results(sample):
     # soil organic matter
     #
     # no input
+
+    #
+    # active carbon
+    #
+    try:
+        sample_active_carbon_ppm_meter = float(sample.get('active_carbon_ppm_meter_sample_sample_active_carbon_ppm_meter', None))
+        results['active_carbon'][v] =  ((0.02 - ( 2 * (0.0055 * (sample_active_carbon_ppm_meter) -0.0002)))
+                                        *72000)
+    except:
+        raise
+        results['active_carbon'][v] =  None
 
     return results
