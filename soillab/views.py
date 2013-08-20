@@ -140,7 +140,7 @@ def form_splitter(request, project_slug='soildoc'):
         return HttpResponse(u"Unable to parse JSON data", status=400)
 
     def field_splitter(field):
-        match = re.match(r'.*_([a-h])$', field)
+        match = re.match(r'.*_([a-i])$', field)
         if match:
             try:
                 suffix = match.groups()[0]
@@ -155,7 +155,7 @@ def form_splitter(request, project_slug='soildoc'):
     # name of a field which if None marks the form as empty
     # we don't submit empty forms to formhub.
     # must be a suffixed field!
-    AVAIL_SUFFIXES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    AVAIL_SUFFIXES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
     # empty_trigger = 'sample_id_$$/sample_manual_id_$$'
 
     # map field suffixes with IDs in holder
