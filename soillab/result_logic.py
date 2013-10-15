@@ -353,7 +353,11 @@ def soil_results(sample):
         results['soil_nitrate'][v] = (
                                       (sample_nitrate - blank_nitrate)
                                       * (20.0
-                                         / (1 - (percent_moisture_by_weight * 10.0))))
+                                         / ((1.0 - percent_moisture_by_weight) * 10.0)))
+        # results['soil_nitrate'][v] = (
+        #                               (sample_nitrate - blank_nitrate)
+        #                             * (20.0
+        #                                / (1 - (percent_moisture_by_weight * 10.0))))
         # results['soil_nitrate'][v] = (
         #                               (sample_nitrate - blank_nitrate)
         #                               * (20.0
@@ -384,7 +388,12 @@ def soil_results(sample):
         results['soil_potassium'][v] = (
                                         (sample_potassium - blank_potassium)
                                         * (20.0
-                                           / (1.0 - (percent_moisture_by_weight * 10.0))))
+                                           / ((1.0 - percent_moisture_by_weight) * 10.0)))
+
+        # results['soil_potassium'][v] = (
+        #                                 (sample_potassium - blank_potassium)
+        #                               * (20.0
+        #                                  / (1.0 - (percent_moisture_by_weight * 10.0))))
 
         # results['soil_potassium'][v] = (
         #                                 (sample_potassium - blank_potassium)
@@ -430,7 +439,9 @@ def soil_results(sample):
         sample_phosphorus_ppm_meter = float(sample.get('phosphorus_ppm_meter_sample_phosphorus_ppm_meter', None))
         blank_phosphorus_ppm_meter = float(sample.get('phosphorus_ppm_meter_blank_phosphorus_ppm_meter', None))
         soil_phosphorus_ppm = ((sample_phosphorus_ppm_meter - blank_phosphorus_ppm_meter)
-                               * (10.0 / 2) * (20.0 / (1.0 - (percent_moisture_by_weight * 10.0))))
+                               * (10.0 / 2) * (20.0 / ((1.0 - percent_moisture_by_weight) * 10.0)) * (30.97 / 94.97))
+        # soil_phosphorus_ppm = ((sample_phosphorus_ppm_meter - blank_phosphorus_ppm_meter)
+        #                        * (10.0 / 2) * (20.0 / (1.0 - (percent_moisture_by_weight * 10.0))))
 
         # (${sample_phosphorus_ppm_meter_x}-${phosphorus_ppm_zero})*(10/2)*(20/(1-(${percent_moisture_by_weight_x}*10)))*(30.97/94.97)
         # soil_phosphorus_ppm = (
@@ -484,10 +495,18 @@ def soil_results(sample):
         soil_sulfur_ppb = (
                           sample_sulfur_ppb_meter
                           * slope_low_spike_ppb
-                          * (sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
-                          / sulfur_analysis_vial_extract
-                          * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
+                          * ((sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
+                          / sulfur_analysis_vial_extract)
+                          * (20.0 / (1.0 - (percent_moisture_by_weight * 10.0)))
                           )
+
+        # soil_sulfur_ppb = (
+        #                   sample_sulfur_ppb_meter
+        #                 * slope_low_spike_ppb
+        #                 * (sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
+        #                 / sulfur_analysis_vial_extract
+        #                 * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
+        #                 )
 
     except:
         soil_sulfur_ppb = None
@@ -500,10 +519,18 @@ def soil_results(sample):
         soil_sulfur_ppm = (
                            sample_sulfur_ppm_meter
                            * slope_high_spike_ppm
-                           * (sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
-                           / sulfur_analysis_vial_extract
-                           * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
+                           * ((sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
+                           / sulfur_analysis_vial_extract)
+                           * (20.0 / (1.0 - (percent_moisture_by_weight * 10.0)))
                           )
+
+        # soil_sulfur_ppm = (
+        #                    sample_sulfur_ppm_meter
+        #                   * slope_high_spike_ppm
+        #                   * (sulfur_analysis_vial_extract + sulfur_analysis_vial_water)
+        #                   / sulfur_analysis_vial_extract
+        #                   * (30.0 / ((1.0 - percent_moisture_by_weight) * 15.0))
+        #                  )
     except:
         soil_sulfur_ppm = None
 
